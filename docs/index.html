@@ -258,23 +258,37 @@
     color: var(--text);
     font-weight: 600;
   }
-  .chain-step-btn {
-    padding: 5px 10px;
-    border: 1px solid var(--border);
-    background: var(--bg);
-    border-radius: 8px;
+  .chain-card {
     cursor: pointer;
-    font-weight: 600;
-    color: var(--text);
-    font-size: 1em;
-    font-family: inherit;
+    transition: border-color 0.12s, box-shadow 0.12s;
   }
-  .chain-step-btn:hover { border-color: var(--accent); color: var(--accent); }
-  .chain-step-count {
+  .chain-card:hover {
+    border-color: var(--accent);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+  }
+  .chain-detail-columns {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    overflow-x: auto;
+    padding-bottom: 10px;
+  }
+  .chain-detail-col {
+    flex: 1 0 280px;
+    min-width: 280px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .chain-detail-col-header {
+    font-weight: 700;
+    font-size: 1.05em;
+    padding-bottom: 6px;
+    border-bottom: 2px solid var(--accent);
+  }
+  .skill-detail-empty {
     color: var(--muted);
-    font-weight: 500;
     font-size: 0.85em;
-    margin-left: 3px;
   }
   .back-btn {
     padding: 7px 16px;
@@ -294,12 +308,6 @@
     margin-bottom: 14px;
   }
   .job-detail-title { font-size: 1.3em; font-weight: 700; }
-  .skill-detail-list {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 12px;
-    align-items: start;
-  }
   .skill-detail-card {
     background: var(--panel);
     border: 1px solid var(--border);
@@ -372,7 +380,7 @@
 <script>
 (function () {
   var PAGE_SIZE = 60;
-  var state = { tab: 'items', page: 1, search: '', filters: {}, jobDetail: null };
+  var state = { tab: 'items', page: 1, search: '', filters: {}, chainDetail: null };
 
   var SKILLS_BY_ID = {};
   (window.SKILLS_DATA || []).forEach(function (s) { SKILLS_BY_ID[s.id] = s; });
@@ -577,17 +585,11 @@
 
   function renderJobChainCard(chain) {
     var stepsHtml = chain.map(function (step, i) {
-      var key = chain._idx + '-' + i;
-      var skillIds = stepSkillIds(step);
       var arrow = i > 0 ? '<span class="chain-arrow">›</span>' : '';
-      var stepHtml = skillIds.length
-        ? '<button class="chain-step-btn" data-key="' + key + '">' + esc(step.name) +
-          '<span class="chain-step-count">(' + skillIds.length + ')</span></button>'
-        : '<span class="chain-step-plain">' + esc(step.name) + '</span>';
-      return arrow + stepHtml;
+      return arrow + '<span class="chain-step-plain">' + esc(step.name) + '</span>';
     }).join('');
 
-    return '<div class="card chain-card">' +
+    return '<div class="card chain-card" data-chain-idx="' + chain._idx + '">' +
       '<div class="chain-row">' + stepsHtml + '</div>' +
     '</div>';
   }
@@ -619,29 +621,31 @@
     '</div>';
   }
 
-  function renderJobDetailView() {
-    var detail = state.jobDetail;
+  function renderChainDetailView() {
+    var chain = JOB_CHAINS[state.chainDetail];
     document.getElementById('count').textContent = '';
-    var pagerEl = document.getElementById('pager');
-    pagerEl.innerHTML = '';
+    document.getElementById('pager').innerHTML = '';
 
     var listEl = document.getElementById('list');
     listEl.className = '';
 
-    if (!detail.skillIds.length) {
-      listEl.innerHTML =
-        '<button class="back-btn" id="backToChains">← 返回轉職鏈列表</button>' +
-        '<div class="empty">此職業目前沒有可讀取的技能資料</div>';
-      return;
-    }
+    var title = chain.map(function (s) { return s.name; }).join(' › ');
+
+    var columnsHtml = chain.map(function (step) {
+      var skillIds = stepSkillIds(step);
+      var body = skillIds.length
+        ? skillIds.map(skillDetailHtml).join('')
+        : '<div class="skill-detail-empty">此職業目前沒有可讀取的技能資料</div>';
+      return '<div class="chain-detail-col">' +
+        '<div class="chain-detail-col-header">' + esc(step.name) + '</div>' +
+        body +
+      '</div>';
+    }).join('');
 
     listEl.innerHTML =
       '<button class="back-btn" id="backToChains">← 返回轉職鏈列表</button>' +
-      '<div class="job-detail-head"><span class="job-detail-title">' + esc(detail.name) + '</span>' +
-        '<span class="count">共 ' + detail.skillIds.length + ' 個技能</span></div>' +
-      '<div class="skill-detail-list">' +
-        detail.skillIds.map(skillDetailHtml).join('') +
-      '</div>';
+      '<div class="job-detail-head"><span class="job-detail-title">' + esc(title) + '</span></div>' +
+      '<div class="chain-detail-columns">' + columnsHtml + '</div>';
   }
 
   // ---------- 篩選 / 分頁 / 渲染 ----------
@@ -665,8 +669,8 @@
   }
 
   function render() {
-    if (state.tab === 'jobs' && state.jobDetail) {
-      renderJobDetailView();
+    if (state.tab === 'jobs' && state.chainDetail !== null) {
+      renderChainDetailView();
       return;
     }
 
@@ -785,7 +789,7 @@
     state.tab = tab;
     state.page = 1;
     state.search = '';
-    state.jobDetail = null;
+    state.chainDetail = null;
     document.getElementById('search').value = '';
     Array.prototype.forEach.call(document.querySelectorAll('.tab-btn'), function (btn) {
       btn.classList.toggle('active', btn.dataset.tab === tab);
@@ -816,22 +820,19 @@
     btn.addEventListener('click', function () { switchTab(btn.dataset.tab); });
   });
 
-  // ---------- 職業技能：點進去看該職業全部技能 ----------
+  // ---------- 職業技能：點轉職鏈卡片看全部技能（逐轉分欄） ----------
 
   var listEl = document.getElementById('list');
 
   listEl.addEventListener('click', function (e) {
     if (e.target.closest && e.target.closest('#backToChains')) {
-      state.jobDetail = null;
+      state.chainDetail = null;
       render();
       return;
     }
-    var btn = e.target.closest && e.target.closest('.chain-step-btn');
-    if (!btn) return;
-    var parts = btn.dataset.key.split('-');
-    var chain = JOB_CHAINS[parts[0]];
-    var step = chain[parts[1]];
-    state.jobDetail = { name: step.name, skillIds: stepSkillIds(step) };
+    var card = e.target.closest && e.target.closest('.chain-card');
+    if (!card) return;
+    state.chainDetail = Number(card.dataset.chainIdx);
     render();
   });
 
