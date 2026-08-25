@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<title>怨古仙境RO 資料庫</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    --bg: #f5f3ee;
+    --panel: #ffffff;
+    --border: #ddd6c9;
+    --text: #2b2a27;
+    --muted: #7a7469;
+    --accent: #8a5a2b;
+    --accent-bg: #f1e4d2;
+    --sheet: #2f7d4f;
+    --sheet-bg: #e3f3e8;
+    --client: #b5772b;
+    --client-bg: #fbecd6;
+    --mono: "Cascadia Code", "Consolas", monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Microsoft JhengHei", "PingFang TC", "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+  }
+  header {
+    position: sticky; top: 0; z-index: 10;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 20px;
+  }
+  h1 {
+    margin: 0 0 10px 0;
+    font-size: 1.3em;
+  }
+  .tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+  .tab-btn {
+    padding: 7px 18px;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.95em;
+    color: var(--muted);
+  }
+  .tab-btn.active {
+    background: var(--accent-bg);
+    border-color: var(--accent);
+    color: var(--accent);
+    font-weight: 600;
+  }
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+  }
+  input[type=text] {
+    flex: 1;
+    min-width: 220px;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 0.95em;
+  }
+  select {
+    padding: 7px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--panel);
+    font-size: 0.9em;
+  }
+  .adv-toggle {
+    padding: 7px 14px;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9em;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .adv-toggle.on {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .count {
+    color: var(--muted);
+    font-size: 0.85em;
+    white-space: nowrap;
+  }
+  #advanced {
+    display: none;
+    margin-top: 10px;
+    padding: 14px 16px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+  #advanced.open { display: block; }
+  .filter-group {
+    margin-bottom: 14px;
+  }
+  .filter-group:last-child { margin-bottom: 0; }
+  .filter-group-label {
+    font-size: 0.75em;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+    font-weight: 700;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 0.86em;
+    font-weight: 500;
+    cursor: pointer;
+    user-select: none;
+    transition: border-color 0.12s, background 0.12s, color 0.12s;
+  }
+  .chip:hover { border-color: var(--accent); }
+  .chip input {
+    position: absolute;
+    width: 0; height: 0;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .chip-mark {
+    display: inline-block;
+    width: 1em;
+    color: transparent;
+  }
+  .chip.checked {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+    font-weight: 600;
+  }
+  .chip.checked .chip-mark { color: #fff; }
+  main {
+    padding: 16px 20px 60px;
+    max-width: 1300px;
+    margin: 0 auto;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 12px;
+    align-items: start;
+  }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+  }
+  .card-head {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 4px;
+  }
+  .card-id {
+    font-family: var(--mono);
+    color: var(--muted);
+    font-size: 0.78em;
+  }
+  .card-name {
+    font-weight: 600;
+    font-size: 1.02em;
+  }
+  .badge {
+    font-size: 0.72em;
+    padding: 1px 8px;
+    border-radius: 10px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .badge-sheet { background: var(--sheet-bg); color: var(--sheet); }
+  .badge-client { background: var(--client-bg); color: var(--client); }
+  .badge-yes { background: var(--sheet-bg); color: var(--sheet); }
+  .badge-no { background: #eee; color: var(--muted); }
+  .card-sub {
+    color: var(--muted);
+    font-size: 0.82em;
+    margin-bottom: 6px;
+  }
+  .variant {
+    background: var(--accent-bg);
+    border-radius: 6px;
+    padding: 7px 10px;
+    margin-top: 6px;
+    font-size: 0.88em;
+  }
+  .variant-title {
+    font-size: 0.78em;
+    color: var(--accent);
+    font-weight: 600;
+    margin-bottom: 3px;
+  }
+  .desc-line { line-height: 1.55; }
+  .pager {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    margin-top: 18px;
+  }
+  .pager button {
+    padding: 6px 14px;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .pager button:disabled { opacity: 0.4; cursor: default; }
+  .empty {
+    text-align: center;
+    color: var(--muted);
+    padding: 40px 0;
+    grid-column: 1 / -1;
+  }
+  .grid-single-col { grid-template-columns: 1fr; }
+  .chain-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 2px;
+    font-size: 1.02em;
+  }
+  .chain-arrow {
+    color: var(--muted);
+    margin: 0 4px;
+    font-weight: 700;
+  }
+  .chain-step-plain {
+    padding: 5px 10px;
+    color: var(--text);
+    font-weight: 600;
+  }
+  .chain-step-btn {
+    padding: 5px 10px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--text);
+    font-size: 1em;
+    font-family: inherit;
+  }
+  .chain-step-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .chain-step-count {
+    color: var(--muted);
+    font-weight: 500;
+    font-size: 0.85em;
+    margin-left: 3px;
+  }
+  .back-btn {
+    padding: 7px 16px;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9em;
+    color: var(--accent);
+    margin-bottom: 14px;
+  }
+  .back-btn:hover { border-color: var(--accent); }
+  .job-detail-head {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .job-detail-title { font-size: 1.3em; font-weight: 700; }
+  .skill-detail-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 12px;
+    align-items: start;
+  }
+  .skill-detail-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+  }
+  .skill-detail-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+  .skill-icon {
+    width: 28px;
+    height: 28px;
+    image-rendering: pixelated;
+    flex-shrink: 0;
+    border-radius: 4px;
+    background: var(--accent-bg);
+  }
+  .skill-detail-name { font-weight: 600; }
+  .skill-detail-maxlv {
+    color: var(--muted);
+    font-size: 0.82em;
+    margin-left: auto;
+    white-space: nowrap;
+  }
+  .skill-detail-summary {
+    color: var(--muted);
+    font-size: 0.85em;
+    margin-bottom: 6px;
+    line-height: 1.5;
+  }
+  .skill-detail-table { border-collapse: collapse; width: 100%; font-size: 0.85em; }
+  .skill-detail-table td {
+    padding: 2px 6px 2px 0;
+    vertical-align: top;
+    border-bottom: 1px solid var(--border);
+  }
+  .skill-detail-table td.lv { color: var(--accent); white-space: nowrap; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>怨古仙境RO 資料庫</h1>
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="items">物品</button>
+    <button class="tab-btn" data-tab="cards">卡片</button>
+    <button class="tab-btn" data-tab="jobs">職業</button>
+  </div>
+  <div class="controls">
+    <input type="text" id="search" placeholder="搜尋名稱或描述...">
+    <button class="adv-toggle" id="advToggle">進階選擇 ▾</button>
+    <span class="count" id="count"></span>
+  </div>
+  <div id="advanced"></div>
+</header>
+
+<main>
+  <div class="grid" id="list"></div>
+  <div class="pager" id="pager"></div>
+</main>
+
+<script src="data/items_data.js"></script>
+<script src="data/cards_data.js"></script>
+<script src="data/jobs_data.js"></script>
+<script src="data/skills_data.js"></script>
+<script src="data/job_chains_data.js"></script>
+<script>
+(function () {
+  var PAGE_SIZE = 60;
+  var state = { tab: 'items', page: 1, search: '', filters: {}, jobDetail: null };
+
+  var SKILLS_BY_ID = {};
+  (window.SKILLS_DATA || []).forEach(function (s) { SKILLS_BY_ID[s.id] = s; });
+
+  var JOBS_BY_ID = {};
+  (window.JOBS_DATA || []).forEach(function (j) { JOBS_BY_ID[j.id] = j; });
+
+  var JOB_CHAINS = (window.JOB_CHAINS_DATA || []).map(function (chain, idx) {
+    chain._idx = idx;
+    return chain;
+  });
+
+  function stepSkillIds(step) {
+    var set = {};
+    step.ids.forEach(function (id) {
+      var j = JOBS_BY_ID[id];
+      (j && j.skillIds || []).forEach(function (sid) { set[sid] = true; });
+    });
+    return Object.keys(set).map(Number);
+  }
+
+  function norm(s) { return (s || '').toString().toLowerCase(); }
+  function textBlob(desc) {
+    if (!desc) return '';
+    if (Array.isArray(desc)) return desc.join(' ');
+    return desc;
+  }
+  function esc(s) {
+    if (s === null || s === undefined) return '';
+    return s.toString().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  // ---------- 各分頁定義 ----------
+
+  function distinctValues(list, keyFn) {
+    var set = {};
+    list.forEach(function (x) {
+      var v = keyFn(x);
+      if (v) set[v] = true;
+    });
+    return Object.keys(set).sort();
+  }
+
+  function distinctSlotTags(list) {
+    var set = {};
+    list.forEach(function (c) {
+      (c.slots || []).forEach(function (s) { set[s] = true; });
+    });
+    return Object.keys(set).sort();
+  }
+
+  var TABS = {
+    items: {
+      data: window.ITEMS_DATA || [],
+      match: matchItem,
+      filterGroups: function () {
+        return [
+          {
+            key: 'cat', label: '分類', multi: true,
+            options: distinctValues(TABS.items.data, function (x) { return x.cat; }),
+            test: function (it, selected) { return selected.indexOf(it.cat) !== -1; },
+          },
+          {
+            key: 'stoneJob', label: '碑石職業', multi: true,
+            options: distinctValues(TABS.items.data, function (x) { return x.stoneJob; }),
+            test: function (it, selected) { return selected.indexOf(it.stoneJob) !== -1; },
+          },
+        ];
+      },
+      sortKey: function (x) { return x.id; },
+      render: renderItemCard,
+    },
+    cards: {
+      data: window.CARDS_DATA || [],
+      match: matchCard,
+      filterGroups: function () {
+        return [
+          {
+            key: 'slot', label: '部位', multi: true,
+            options: distinctSlotTags(TABS.cards.data),
+            test: function (c, selected) {
+              return (c.slots || []).some(function (s) { return selected.indexOf(s) !== -1; });
+            },
+          },
+          {
+            key: 'series', label: '系列', multi: true,
+            options: ['遠古版', '一般版'],
+            test: function (c, selected) {
+              return selected.some(function (opt) {
+                if (opt === '遠古版') return c.ancient;
+                if (opt === '一般版') return !c.ancient;
+                return false;
+              });
+            },
+          },
+        ];
+      },
+      sortKey: function (x) { return x.id; },
+      render: renderCardCard,
+    },
+    jobs: {
+      data: JOB_CHAINS,
+      match: matchJobChain,
+      filterGroups: function () {
+        return [
+          {
+            key: 'firstJob', label: '初職', multi: true,
+            options: distinctValues(TABS.jobs.data, function (c) { return c[0] && c[0].name; }),
+            test: function (c, selected) { return c[0] && selected.indexOf(c[0].name) !== -1; },
+          },
+        ];
+      },
+      sortKey: function (c) { return c._idx; },
+      render: renderJobChainCard,
+    },
+  };
+
+  function matchItem(it, q) {
+    if (!q) return true;
+    var blob = norm(it.name) + ' ' + norm(it.uname) + ' ' + norm(it.series) + ' ' + norm(it.equip) + ' ' + norm((it.jobs || []).join(' '));
+    if (blob.indexOf(q) !== -1) return true;
+    for (var i = 0; i < it.variants.length; i++) {
+      if (norm(textBlob(it.variants[i].desc)).indexOf(q) !== -1) return true;
+    }
+    return false;
+  }
+
+  function matchCard(c, q) {
+    if (!q) return true;
+    var blob = norm(c.name);
+    if (c.sheet) blob += ' ' + norm(textBlob(c.sheet.effects));
+    (c.client || []).forEach(function (v) { blob += ' ' + norm(textBlob(v.desc)); });
+    return blob.indexOf(q) !== -1;
+  }
+
+  function matchJobChain(chain, q) {
+    if (!q) return true;
+    var blob = norm(chain.map(function (s) { return s.name; }).join(' '));
+    return blob.indexOf(q) !== -1;
+  }
+
+  // ---------- 卡片渲染（一律展開，不需要點擊） ----------
+
+  function renderItemCard(it) {
+    var meta = [];
+    if (it.jobs && it.jobs.length) meta.push('職業: ' + esc(it.jobs.join('/')));
+    else if (it.equip) meta.push('裝備: ' + esc(it.equip));
+    if (it.series) meta.push('系列: ' + esc(it.series));
+    if (it.weight !== null && it.weight !== undefined) meta.push('重量: ' + it.weight);
+    if (it.slot) meta.push('卡槽: ' + it.slot);
+    if (it.reqLv !== null && it.reqLv !== undefined) meta.push('需求Lv: ' + it.reqLv);
+    if (it.stoneJob) meta.push('碑石職業: ' + esc(it.stoneJob));
+
+    var detail = it.variants.map(function (v, idx) {
+      var lines = (v.desc || []).map(function (l) { return '<div class="desc-line">' + esc(l) + '</div>'; }).join('');
+      var title = it.variants.length > 1 ? ('<div class="variant-title">定義 #' + (idx + 1) + '</div>') : '';
+      return '<div class="variant">' + title + lines + '</div>';
+    }).join('');
+
+    return '<div class="card">' +
+      '<div class="card-head">' +
+        '<span class="card-id">#' + it.id + '</span>' +
+        '<span class="card-name">' + esc(it.name) + '</span>' +
+        '<span class="badge badge-yes">' + esc(it.cat) + '</span>' +
+        (it.uname && it.uname !== it.name ? '<span class="count">(未鑑定: ' + esc(it.uname) + ')</span>' : '') +
+      '</div>' +
+      '<div class="card-sub">' + esc(meta.join(' · ')) + '</div>' +
+      detail +
+    '</div>';
+  }
+
+  function renderCardCard(c) {
+    var hasClient = !!(c.client && c.client.length);
+    var badges = '';
+    if (c.ancient) badges += '<span class="badge badge-yes">遠古</span>';
+
+    var blocks = '';
+    if (hasClient) {
+      c.client.forEach(function (v, idx) {
+        var lines = (v.desc || []).map(function (l) { return '<div class="desc-line">' + esc(l) + '</div>'; }).join('');
+        var title = c.client.length > 1 ? ('版本 #' + (idx + 1)) : '';
+        blocks += '<div class="variant">' + (title ? '<div class="variant-title">' + title + '</div>' : '') + lines + '</div>';
+      });
+    } else if (c.sheet) {
+      // 目前資料裡不會發生（每張卡client都有資料），保留防呆：真的沒有client資料才退回顯示試算表內容
+      var sLines = (c.sheet.effects || []).map(function (l) { return '<div class="desc-line">' + esc(l) + '</div>'; }).join('');
+      blocks += '<div class="variant">' + sLines + '</div>';
+    }
+
+    var sub = (c.slots || []).length ? esc(c.slots.join(' / ')) : '';
+
+    return '<div class="card">' +
+      '<div class="card-head">' +
+        '<span class="card-id">#' + c.id + '</span>' +
+        '<span class="card-name">' + esc(c.name) + '</span>' +
+        badges +
+      '</div>' +
+      (sub ? '<div class="card-sub">' + sub + '</div>' : '') +
+      blocks +
+    '</div>';
+  }
+
+  function renderJobChainCard(chain) {
+    var stepsHtml = chain.map(function (step, i) {
+      var key = chain._idx + '-' + i;
+      var skillIds = stepSkillIds(step);
+      var arrow = i > 0 ? '<span class="chain-arrow">›</span>' : '';
+      var stepHtml = skillIds.length
+        ? '<button class="chain-step-btn" data-key="' + key + '">' + esc(step.name) +
+          '<span class="chain-step-count">(' + skillIds.length + ')</span></button>'
+        : '<span class="chain-step-plain">' + esc(step.name) + '</span>';
+      return arrow + stepHtml;
+    }).join('');
+
+    return '<div class="card chain-card">' +
+      '<div class="chain-row">' + stepsHtml + '</div>' +
+    '</div>';
+  }
+
+  function skillDetailHtml(sid) {
+    var s = SKILLS_BY_ID[sid];
+    var name = s ? s.name : ('#' + sid);
+    var iconHtml = '<img class="skill-icon" src="data/icons/skill/' + sid + '.png" alt=""' +
+      ' onerror="this.style.visibility=\'hidden\'">';
+    var maxLv = s && s.maxLv ? ('Max Lv ' + s.maxLv) : '';
+    var summaryHtml = (s && s.summary && s.summary.length)
+      ? '<div class="skill-detail-summary">' + s.summary.map(esc).join('<br>') + '</div>'
+      : '';
+    var tableHtml = '';
+    if (s && s.levels && s.levels.length) {
+      tableHtml = '<table class="skill-detail-table">' + s.levels.map(function (lv) {
+        return '<tr><td class="lv">Lv' + lv.lv + '</td><td>' + esc(lv.text) + '</td></tr>';
+      }).join('') + '</table>';
+    } else if (!s || !s.summary || !s.summary.length) {
+      summaryHtml = '<div class="skill-detail-summary">此技能目前沒有可讀取的效果說明文字</div>';
+    }
+    return '<div class="skill-detail-card">' +
+      '<div class="skill-detail-head">' +
+        iconHtml +
+        '<span class="skill-detail-name">' + esc(name) + '</span>' +
+        (maxLv ? '<span class="skill-detail-maxlv">' + maxLv + '</span>' : '') +
+      '</div>' +
+      summaryHtml + tableHtml +
+    '</div>';
+  }
+
+  function renderJobDetailView() {
+    var detail = state.jobDetail;
+    document.getElementById('count').textContent = '';
+    var pagerEl = document.getElementById('pager');
+    pagerEl.innerHTML = '';
+
+    var listEl = document.getElementById('list');
+    listEl.className = '';
+
+    if (!detail.skillIds.length) {
+      listEl.innerHTML =
+        '<button class="back-btn" id="backToChains">← 返回轉職鏈列表</button>' +
+        '<div class="empty">此職業目前沒有可讀取的技能資料</div>';
+      return;
+    }
+
+    listEl.innerHTML =
+      '<button class="back-btn" id="backToChains">← 返回轉職鏈列表</button>' +
+      '<div class="job-detail-head"><span class="job-detail-title">' + esc(detail.name) + '</span>' +
+        '<span class="count">共 ' + detail.skillIds.length + ' 個技能</span></div>' +
+      '<div class="skill-detail-list">' +
+        detail.skillIds.map(skillDetailHtml).join('') +
+      '</div>';
+  }
+
+  // ---------- 篩選 / 分頁 / 渲染 ----------
+
+  function currentFiltered() {
+    var cfg = TABS[state.tab];
+    var q = norm(state.search);
+    var list = cfg.data.filter(function (x) { return cfg.match(x, q); });
+
+    var groups = state.filters[state.tab] || [];
+    groups.forEach(function (g) {
+      var selected = g.multi ? Array.prototype.slice.call(g.selected) : g.selected;
+      var hasSelection = g.multi ? selected.length > 0 : !!selected;
+      if (hasSelection) {
+        list = list.filter(function (x) { return g.test(x, selected); });
+      }
+    });
+
+    list.sort(function (a, b) { return cfg.sortKey(a) - cfg.sortKey(b); });
+    return list;
+  }
+
+  function render() {
+    if (state.tab === 'jobs' && state.jobDetail) {
+      renderJobDetailView();
+      return;
+    }
+
+    var cfg = TABS[state.tab];
+    var list = currentFiltered();
+    var totalPages = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
+    if (state.page > totalPages) state.page = totalPages;
+    var startIdx = (state.page - 1) * PAGE_SIZE;
+    var pageItems = list.slice(startIdx, startIdx + PAGE_SIZE);
+
+    document.getElementById('count').textContent = '共 ' + list.length + ' 筆';
+
+    var listEl = document.getElementById('list');
+    listEl.className = 'grid' + (state.tab === 'jobs' ? ' grid-single-col' : '');
+    if (pageItems.length === 0) {
+      listEl.innerHTML = '<div class="empty">沒有符合條件的結果</div>';
+    } else {
+      listEl.innerHTML = pageItems.map(cfg.render).join('');
+    }
+
+    var pagerEl = document.getElementById('pager');
+    pagerEl.innerHTML = '';
+    if (totalPages > 1) {
+      var prev = document.createElement('button');
+      prev.textContent = '← 上一頁';
+      prev.disabled = state.page <= 1;
+      prev.onclick = function () { state.page--; render(); window.scrollTo(0, 0); };
+      var info = document.createElement('span');
+      info.className = 'count';
+      info.textContent = '第 ' + state.page + ' / ' + totalPages + ' 頁';
+      var next = document.createElement('button');
+      next.textContent = '下一頁 →';
+      next.disabled = state.page >= totalPages;
+      next.onclick = function () { state.page++; render(); window.scrollTo(0, 0); };
+      pagerEl.appendChild(prev);
+      pagerEl.appendChild(info);
+      pagerEl.appendChild(next);
+    }
+  }
+
+  // ---------- 進階選擇面板 ----------
+
+  function buildAdvancedPanel() {
+    var cfg = TABS[state.tab];
+    var groupDefs = cfg.filterGroups();
+    var groupState = [];
+
+    var panel = document.getElementById('advanced');
+    panel.innerHTML = '';
+
+    groupDefs.forEach(function (def) {
+      var g = {
+        key: def.key,
+        multi: def.multi,
+        test: def.test,
+        selected: def.multi ? [] : (def.defaultValue || ''),
+      };
+      groupState.push(g);
+
+      var wrap = document.createElement('div');
+      wrap.className = 'filter-group';
+      var label = document.createElement('div');
+      label.className = 'filter-group-label';
+      label.textContent = def.label;
+      wrap.appendChild(label);
+
+      var row = document.createElement('div');
+      row.className = 'chip-row';
+
+      def.options.forEach(function (opt) {
+        var chip = document.createElement('label');
+        chip.className = 'chip';
+        var isChecked = def.multi ? false : (opt === g.selected);
+        if (isChecked) chip.classList.add('checked');
+
+        var input = document.createElement('input');
+        input.type = def.multi ? 'checkbox' : 'radio';
+        input.name = 'adv-' + def.key;
+        input.checked = isChecked;
+        input.addEventListener('change', function () {
+          if (def.multi) {
+            var idx = g.selected.indexOf(opt);
+            if (input.checked && idx === -1) g.selected.push(opt);
+            if (!input.checked && idx !== -1) g.selected.splice(idx, 1);
+            chip.classList.toggle('checked', input.checked);
+          } else {
+            g.selected = opt;
+            Array.prototype.forEach.call(row.querySelectorAll('.chip'), function (c) { c.classList.remove('checked'); });
+            chip.classList.add('checked');
+          }
+          state.page = 1;
+          render();
+        });
+
+        var mark = document.createElement('span');
+        mark.className = 'chip-mark';
+        mark.textContent = '✓';
+
+        var span = document.createElement('span');
+        span.textContent = opt;
+
+        chip.appendChild(input);
+        chip.appendChild(mark);
+        chip.appendChild(span);
+        row.appendChild(chip);
+      });
+
+      wrap.appendChild(row);
+      panel.appendChild(wrap);
+    });
+
+    state.filters[state.tab] = groupState;
+  }
+
+  function switchTab(tab) {
+    state.tab = tab;
+    state.page = 1;
+    state.search = '';
+    state.jobDetail = null;
+    document.getElementById('search').value = '';
+    Array.prototype.forEach.call(document.querySelectorAll('.tab-btn'), function (btn) {
+      btn.classList.toggle('active', btn.dataset.tab === tab);
+    });
+    buildAdvancedPanel();
+    render();
+  }
+
+  var searchTimer = null;
+  document.getElementById('search').addEventListener('input', function (e) {
+    clearTimeout(searchTimer);
+    var val = e.target.value;
+    searchTimer = setTimeout(function () {
+      state.search = val;
+      state.page = 1;
+      render();
+    }, 150);
+  });
+
+  document.getElementById('advToggle').addEventListener('click', function () {
+    var panel = document.getElementById('advanced');
+    var open = panel.classList.toggle('open');
+    this.classList.toggle('on', open);
+    this.textContent = open ? '進階選擇 ▲' : '進階選擇 ▾';
+  });
+
+  Array.prototype.forEach.call(document.querySelectorAll('.tab-btn'), function (btn) {
+    btn.addEventListener('click', function () { switchTab(btn.dataset.tab); });
+  });
+
+  // ---------- 職業技能：點進去看該職業全部技能 ----------
+
+  var listEl = document.getElementById('list');
+
+  listEl.addEventListener('click', function (e) {
+    if (e.target.closest && e.target.closest('#backToChains')) {
+      state.jobDetail = null;
+      render();
+      return;
+    }
+    var btn = e.target.closest && e.target.closest('.chain-step-btn');
+    if (!btn) return;
+    var parts = btn.dataset.key.split('-');
+    var chain = JOB_CHAINS[parts[0]];
+    var step = chain[parts[1]];
+    state.jobDetail = { name: step.name, skillIds: stepSkillIds(step) };
+    render();
+  });
+
+  buildAdvancedPanel();
+  render();
+})();
+</script>
+
+</body>
+</html>
