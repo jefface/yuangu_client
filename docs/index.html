@@ -509,13 +509,7 @@
   .gs-layout { display: grid; grid-template-columns: 1.35fr 1fr; gap: 16px; align-items: start; }
   @media (max-width: 860px) { .gs-layout { grid-template-columns: 1fr; } }
   .gs-window { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
-  .gs-header { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 4px; }
-  .gs-skill-line { font-size: 0.88em; color: var(--muted); }
-  .gs-skill-line b { color: var(--text); }
-  .gs-power-label { font-size: 0.72em; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); text-align: right; }
-  .gs-power-value { font-family: var(--mono); font-size: 1.7em; font-weight: 700; color: var(--accent); text-align: right; }
-  .gs-stat-strip { display: flex; gap: 14px; flex-wrap: wrap; font-size: 0.85em; color: var(--muted); margin: 8px 0 14px; }
-  .gs-stat-strip span.v { font-family: var(--mono); color: var(--text); font-weight: 600; }
+  .gs-side { display: flex; flex-direction: column; gap: 16px; }
   .gs-slot-grid { display: flex; flex-direction: column; gap: 7px; }
   .gs-slot-row { display: grid; grid-template-columns: 104px repeat(4, 1fr); gap: 6px; }
   .gs-slot-name { display: flex; flex-direction: column; justify-content: center; font-size: 0.78em; padding: 2px; }
@@ -530,46 +524,71 @@
   .gs-cell:hover, .gs-cell.dragover { border-color: var(--accent); }
   .gs-cell.active-picker { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-bg) inset; }
   .gs-cell .cn { font-size: 0.78em; font-weight: 600; color: var(--text); line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .gs-cell .cp { font-size: 0.76em; color: var(--sheet); font-weight: 600; font-family: var(--mono); }
+  .gs-cell .cp { font-size: 0.72em; color: var(--sheet); font-weight: 600; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
   .gs-cell .cx { color: var(--muted); font-size: 1.1em; text-align: center; }
   .gs-cell .rm { position: absolute; top: 1px; right: 3px; font-size: 0.7em; color: var(--muted); opacity: 0; }
   .gs-cell.filled:hover .rm { opacity: 1; }
   .gs-cell .rm:hover { color: #b1452f; }
-  .gs-picker { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 10px; max-height: 660px; }
+  .gs-picker { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 10px; max-height: 420px; }
   .gs-picker h3 { margin: 0; font-size: 0.98em; }
   .gs-picker-hint { font-size: 0.8em; color: var(--muted); margin: -4px 0 0; }
   .gs-picker input[type=text] { width: 100%; }
   .gs-picker-list { overflow-y: auto; display: flex; flex-direction: column; gap: 3px; padding-right: 2px; }
   .gs-picker-row {
-    display: flex; justify-content: space-between; gap: 8px; align-items: center;
+    display: flex; flex-direction: column; gap: 2px;
     padding: 6px 9px; border-radius: 6px; border: 1px solid transparent; cursor: grab; font-size: 0.83em;
   }
   .gs-picker-row:hover { background: var(--accent-bg); border-color: var(--border); }
-  .gs-picker-row .pn { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .gs-picker-row .prow-top { display: flex; justify-content: space-between; gap: 8px; }
+  .gs-picker-row .pn { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .gs-picker-row .pp { font-family: var(--mono); font-weight: 600; color: var(--sheet); flex-shrink: 0; }
+  .gs-picker-row .plabel { color: var(--muted); font-size: 0.92em; line-height: 1.4; }
   .gs-picker-row.used { opacity: 0.4; }
   .gs-picker-empty { color: var(--muted); font-size: 0.85em; padding: 20px 4px; text-align: center; }
   .gs-footnote { font-size: 0.78em; color: var(--muted); margin-top: 12px; line-height: 1.6; }
+  .hover-tip {
+    position: fixed; z-index: 200; display: none; pointer-events: none;
+    max-width: 280px; background: var(--panel); border: 1px solid var(--border);
+    border-radius: 8px; padding: 9px 12px; font-size: 0.8em; line-height: 1.55;
+    box-shadow: 0 6px 20px rgba(0,0,0,.18); color: var(--text);
+  }
+  .hover-tip b { display: block; margin-bottom: 3px; color: var(--accent); }
+  .stat-table-wrap { overflow-x: auto; }
+  .stat-table { border-collapse: collapse; width: 100%; font-size: 0.83em; }
+  .stat-table th, .stat-table td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .stat-table th { color: var(--accent); font-weight: 600; font-size: 0.92em; }
+  .stat-table .stat-pct { font-family: var(--mono); font-weight: 700; color: var(--sheet); white-space: nowrap; }
+  .stat-table .stat-src { display: flex; flex-wrap: wrap; gap: 4px; }
+  .stat-src-chip { background: var(--accent-bg); color: var(--accent); border-radius: 6px; padding: 1px 7px; font-size: 0.92em; cursor: default; white-space: nowrap; }
+  .stat-group-row td { background: var(--bg); font-weight: 700; font-size: 0.78em; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); padding: 5px 8px; border-bottom: 1px solid var(--border); }
+  .gs-summary { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
+  .gs-summary h3 { margin: 0 0 8px; font-size: 0.98em; }
+  .gs-summary-list { display: flex; flex-direction: column; gap: 6px; max-height: 260px; overflow-y: auto; }
+  .gs-summary-row { display: flex; justify-content: space-between; gap: 10px; font-size: 0.83em; padding: 5px 0; border-top: 1px solid var(--border); }
+  .gs-summary-row:first-child { border-top: none; }
+  .gs-summary-row .slabel { color: var(--text); line-height: 1.4; }
+  .gs-summary-row .sfrom { color: var(--muted); font-size: 0.85em; }
+  .gs-summary-empty { color: var(--muted); font-size: 0.85em; }
 
-  .ja-rank-row { display: grid; grid-template-columns: 26px 1fr auto; gap: 10px; align-items: center; padding: 8px 12px; border-radius: 8px; background: var(--panel); border: 1px solid var(--border); margin-bottom: 6px; }
-  .ja-rank-row .n { font-weight: 700; color: var(--accent); text-align: center; }
-  .ja-rank-row .root { color: var(--muted); font-size: 0.82em; font-weight: 400; margin-left: 6px; }
-  .ja-rank-row .p { font-family: var(--mono); font-weight: 700; }
   .ja-chain { font-size: 0.78em; color: var(--muted); margin-bottom: 2px; }
   .ja-tag-bar { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
   .ja-tag-card { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; margin-bottom: 12px; }
-  .ja-tag-card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; margin-bottom: 6px; }
+  .ja-tag-card-head { margin-bottom: 8px; }
   .ja-tag-card-head h4 { margin: 0; font-size: 1.05em; }
-  .ja-tag-card-power { text-align: right; }
-  .ja-tag-card-power .lbl { font-size: 0.68em; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
-  .ja-tag-card-power .val { font-family: var(--mono); font-size: 1.25em; font-weight: 700; color: var(--accent); }
-  .ja-skill-line { font-size: 0.85em; color: var(--muted); margin-bottom: 8px; }
+  .ja-scenario-block { padding: 10px 0; border-top: 1px solid var(--border); }
+  .ja-scenario-block:first-of-type { border-top: none; padding-top: 0; }
+  .ja-scenario-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+  .stag { font-weight: 600; padding: 2px 10px; border-radius: 999px; font-size: 0.78em; color: #fff; white-space: nowrap; }
+  .ja-skill-line { font-size: 0.85em; color: var(--muted); }
   .ja-skill-line b { color: var(--text); }
+  .ja-subhead { font-size: 0.72em; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin: 10px 0 4px; }
   .ja-gear-list { display: flex; flex-direction: column; gap: 3px; }
-  .ja-gear-row { display: flex; gap: 10px; font-size: 0.82em; padding: 4px 0; border-top: 1px solid var(--border); }
+  .ja-gear-row { display: flex; gap: 10px; font-size: 0.82em; padding: 6px 0; border-top: 1px solid var(--border); align-items: flex-start; }
   .ja-gear-row:first-child { border-top: none; }
-  .ja-gear-row .slot { flex: 0 0 150px; font-weight: 600; color: var(--text); }
-  .ja-gear-row .cards { color: var(--muted); }
+  .ja-gear-row .slot { flex: 0 0 150px; font-weight: 600; color: var(--text); padding-top: 3px; }
+  .ja-gear-row .cards { color: var(--muted); display: flex; flex-direction: column; gap: 4px; flex: 1; }
+  .ja-card-chip { display: block; }
+  .ja-card-chip:hover { color: var(--text); }
   .ja-essential-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; }
   .ja-ess-card { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 9px 12px; }
   .ja-ess-card .n { font-weight: 600; font-size: 0.85em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -610,6 +629,7 @@
   <div class="job-analysis-page" id="jobAnalysisPage" style="display:none"></div>
 </main>
 <div class="floating-stats" id="collectionStats"></div>
+<div class="hover-tip" id="hoverTip"></div>
 
 <script src="data/items_data.js"></script>
 <script src="data/cards_data.js"></script>
@@ -775,13 +795,17 @@
   }
   function gsContextOf(scenario) {
     if (scenario.element) return 'magic:' + scenario.element;
-    return scenario.skillIsPhys ? 'phys' : 'magic';
+    if (!scenario.phys) return 'magic';
+    // 近戰/遠戰現在是各自獨立的情境（跟公式頁籤說的一樣，「近距離物理傷害」「遠距離
+    // 物理傷害」是兩個不同乘區），不是共用同一個'phys'——不然近戰遠戰選出來的卡會一樣。
+    return scenario.label === '遠戰' ? 'ranged' : 'melee';
   }
-  function gsPctFor(cardId, context) {
+  function gsEntryFor(cardId, context) {
     var row = GS.cardMatrix[cardId];
-    if (!row) return 0;
-    return row[context] || 0;
+    var e = row && row[context];
+    return e || { pct: 0, label: '' };
   }
+  function gsPctFor(cardId, context) { return gsEntryFor(cardId, context).pct; }
 
   var GEARSIM_HTML = [
     '<div class="gs-toolbar">',
@@ -790,22 +814,18 @@
     '</div>',
     '<div class="gs-layout">',
     '<div class="gs-window">',
-    '<div class="gs-header">',
-    '<div class="gs-skill-line">主力技能：<b id="gsSkillName">-</b> <span id="gsSkillPct"></span></div>',
-    '<div><div class="gs-power-label">輸出分數</div><div class="gs-power-value" id="gsPowerValue">0</div></div>',
-    '</div>',
-    '<div class="gs-stat-strip">',
-    '<span>技能倍率 <span class="v" id="gsStatSkill">-</span></span>',
-    '<span>被動加成 <span class="v" id="gsStatBuff">-</span></span>',
-    '<span>石碑加成 <span class="v" id="gsStatStone">-</span></span>',
-    '<span>裝備加成 <span class="v" id="gsStatGear">-</span></span>',
-    '</div>',
     '<div class="gs-slot-grid" id="gsSlotGrid"></div>',
-    '<div class="gs-footnote">點格子挑卡，或從右側清單把卡拖進格子；同一張卡ID全身只能用一次，插到新格子會自動從舊格子移出。頭上/中/下只算卡槽，不含底座裝備本身的數值。武器固定失落系列、身體防具固定伊爾全職業套，是假想的相對輸出分數，不是遊戲內實際傷害。</div>',
+    '<div class="gs-footnote">點格子挑卡，或從右側清單把卡拖進格子；同一張卡ID全身只能用一次，插到新格子會自動從舊格子移出。頭上/中/下只算卡槽，不含底座裝備本身的數值。武器固定失落系列、身體防具固定伊爾全職業套。滑鼠移到卡片上可以看完整說明。</div>',
     '</div>',
+    '<div class="gs-side">',
     '<div class="gs-picker" id="gsPickerBody">',
     '<h3>選一個格子開始配裝</h3>',
-    '<p class="gs-picker-hint">點左邊任何一個卡槽，這裡會列出所有插得進去的卡片，依目前情境的加成排序。</p>',
+    '<p class="gs-picker-hint">點左邊任何一個卡槽，這裡會列出所有插得進去的卡片，依目前情境的加成排序，滑鼠移過去看完整效果。</p>',
+    '</div>',
+    '<div class="gs-summary">',
+    '<h3>目前裝備加成明細</h3>',
+    '<div id="gsSummaryList" class="gs-summary-list"></div>',
+    '</div>',
     '</div>',
     '</div>',
   ].join('');
@@ -814,17 +834,19 @@
 
   function gsCurrentJob() { return GS.jobs[gsState.jobIdx]; }
   function gsCurrentScenario() {
-    var j = gsCurrentJob();
-    var s = j.scenarios[gsState.scenIdx];
-    s.skillIsPhys = j.phys;
-    return s;
+    // 使用者指出很多職業同時能玩物理跟法系——每個情境現在自己帶phys欄位，
+    // 不是整個職業共用同一個phys（同一個職業底下可能同時有近戰/遠戰跟屬性情境）。
+    return gsCurrentJob().scenarios[gsState.scenIdx];
   }
   function gsCloneGear(scenario) {
     return scenario.gear.map(function (slot) {
       var capacity = GS_SLOT_CAPACITY[slot.slot] || slot.cards.length || 1;
       var cells = new Array(capacity).fill(null);
       slot.cards.forEach(function (c, i) { if (i < capacity) cells[i] = c.id; });
-      return { slot: slot.slot, item: slot.item, base: slot.base, cells: cells };
+      return {
+        slot: slot.slot, item: slot.item, base: slot.base, cells: cells,
+        baseParts: slot.baseParts || [], itemDesc: slot.itemDesc || '',
+      };
     });
   }
   function gsResetGear() { gsState.gear = gsCloneGear(gsCurrentScenario()); gsState.pickerSlot = null; }
@@ -842,34 +864,36 @@
       return '<button class="gs-chip' + (i === gsState.scenIdx ? ' active' : '') + '" data-i="' + i + '">' + esc(s.label) + '</button>';
     }).join('');
     Array.prototype.forEach.call(wrap.querySelectorAll('.gs-chip'), function (btn) {
-      btn.onclick = function () { gsState.scenIdx = +btn.dataset.i; gsResetGear(); gsRenderAll(); };
+      btn.onclick = function () { gsState.scenIdx = +btn.dataset.i; gsResetGear(); gsRenderChips(); gsRenderAll(); };
     });
   }
-  function gsRenderHeader() {
-    var s = gsCurrentScenario();
-    document.getElementById('gsSkillName').textContent = s.skill;
-    document.getElementById('gsSkillPct').textContent = (s.skillIsPhys ? 'ATK ' : 'MATK ') + s.skillPct + '%';
-    document.getElementById('gsStatSkill').textContent = s.skillPct + '%';
-    document.getElementById('gsStatBuff').textContent = '+' + s.buffPct + '%';
-    document.getElementById('gsStatStone').textContent = '+' + s.stonePct + '%';
-  }
-  function gsComputePower() {
-    var s = gsCurrentScenario();
-    var ctx = gsContextOf(s);
-    var gearBonus = 0;
+  function gsRenderSummary() {
+    // 使用者要求：裝備模擬只是用來看搭配卡片後的效果，不需要技能/輸出分數那些換算——
+    // 這裡改成一張「素質整合表」，同一句素質敘述來自不同卡就合併加總成一列，
+    // 來源卡片各自附上滑鼠移過去看完整效果的浮框。
+    var ctx = gsContextOf(gsCurrentScenario());
+    var entries = [];
     gsState.gear.forEach(function (slot) {
-      gearBonus += slot.base || 0;
-      slot.cells.forEach(function (cid) { if (cid) gearBonus += gsPctFor(cid, ctx); });
+      if (slot.baseParts && slot.baseParts.length) {
+        slot.baseParts.forEach(function (p) {
+          entries.push({ name: slot.item, desc: slot.itemDesc, label: p.label, pct: p.pct, category: p.category });
+        });
+      }
+      slot.cells.forEach(function (cid) {
+        if (!cid) return;
+        var card = GS_CARD_BY_ID[cid];
+        var entry = gsEntryFor(cid, ctx);
+        if (!card || !entry.pct) return;
+        // 拆成每一句素質各自一筆，同一句從不同卡來的才能真的合併加總（不是把一張卡
+        // 好幾句效果黏成一句長字串再比對，那樣永遠對不到別張卡的單句效果）。
+        (entry.parts && entry.parts.length ? entry.parts : [{ label: entry.label, pct: entry.pct, category: '其他' }]).forEach(function (p) {
+          entries.push({ name: card.name, desc: card.desc, label: p.label, pct: p.pct, category: p.category });
+        });
+      });
     });
-    var baseStatAtk = 130 + Math.pow(Math.floor(130 / 10), 2) + Math.floor(50 / 5) + Math.floor(50 / 5);
-    var totalMult = 1 + (s.buffPct + gearBonus + s.stonePct) / 100;
-    var power = (baseStatAtk + s.weaponAttack) * (s.skillPct / 100) * totalMult;
-    return { gearBonus: gearBonus, power: power };
-  }
-  function gsRenderPower() {
-    var r = gsComputePower();
-    document.getElementById('gsStatGear').textContent = '+' + r.gearBonus.toFixed(0) + '%';
-    document.getElementById('gsPowerValue').textContent = Math.round(r.power).toLocaleString('en-US');
+    var el = document.getElementById('gsSummaryList');
+    el.innerHTML = '<div class="stat-table-wrap">' + renderStatTable(entries) + '</div>';
+    bindHoverTipsIn(el);
   }
   function gsAllUsedIds() {
     var used = {};
@@ -897,10 +921,12 @@
           if (gsState.pickerSlot && gsState.pickerSlot.rowIdx === rowIdx && gsState.pickerSlot.cellIdx === i) cell.classList.add('active-picker');
           if (cid) {
             var card = GS_CARD_BY_ID[cid];
-            var pct = gsPctFor(cid, ctx);
-            cell.innerHTML = '<span class="rm" title="移除">✕</span><div class="cn">' + esc(card ? card.name : '?') + '</div><div class="cp">+' + pct.toFixed(0) + '%</div>';
+            var entry = gsEntryFor(cid, ctx);
+            cell.innerHTML = '<span class="rm" title="移除">✕</span><div class="cn">' + esc(card ? card.name : '?') + '</div>' +
+              '<div class="cp">' + esc(entry.label || ('+' + entry.pct.toFixed(0) + '%')) + '</div>';
+            if (card) bindHoverTip(cell, card.name, card.desc);
             cell.querySelector('.rm').onclick = function (e) {
-              e.stopPropagation(); slot.cells[i] = null; gsRenderGrid(); gsRenderPower();
+              e.stopPropagation(); slot.cells[i] = null; gsRenderGrid(); gsRenderSummary();
               if (gsState.pickerSlot && gsState.pickerSlot.rowIdx === rowIdx && gsState.pickerSlot.cellIdx === i) gsRenderPicker(rowIdx, i);
             };
           } else {
@@ -923,7 +949,7 @@
   function gsAssignCard(rowIdx, cellIdx, cardId) {
     gsState.gear.forEach(function (slot) { slot.cells.forEach(function (cid, i) { if (cid === cardId) slot.cells[i] = null; }); });
     gsState.gear[rowIdx].cells[cellIdx] = cardId;
-    gsRenderGrid(); gsRenderPower(); gsOpenPicker(rowIdx, cellIdx);
+    gsRenderGrid(); gsRenderSummary(); gsOpenPicker(rowIdx, cellIdx);
   }
   function gsOpenPicker(rowIdx, cellIdx) {
     gsState.pickerSlot = { rowIdx: rowIdx, cellIdx: cellIdx };
@@ -939,18 +965,21 @@
     function doRender(query) {
       var q = (query || '').trim();
       var list = fits.filter(function (c) { return !q || c.name.indexOf(q) !== -1; });
-      list = list.map(function (c) { return { c: c, pct: gsPctFor(c.id, ctx) }; })
-        .sort(function (a, b) { return b.pct - a.pct || a.c.name.localeCompare(b.c.name, 'zh'); });
+      list = list.map(function (c) { return { c: c, entry: gsEntryFor(c.id, ctx) }; })
+        .sort(function (a, b) { return b.entry.pct - a.entry.pct || a.c.name.localeCompare(b.c.name, 'zh'); });
       var listEl = body.querySelector('.gs-picker-list');
       if (!list.length) { listEl.innerHTML = '<div class="gs-picker-empty">沒有符合的卡片</div>'; return; }
       listEl.innerHTML = list.map(function (o) {
         var isUsed = used[o.c.id] && gsState.gear[rowIdx].cells[cellIdx] !== o.c.id;
-        return '<div class="gs-picker-row' + (isUsed ? ' used' : '') + '" draggable="true" data-id="' + o.c.id + '" title="' + esc(o.c.desc) + '">' +
-          '<span class="pn">' + esc(o.c.name) + '</span><span class="pp">' + (o.pct ? '+' + o.pct.toFixed(0) + '%' : '') + '</span></div>';
+        return '<div class="gs-picker-row' + (isUsed ? ' used' : '') + '" draggable="true" data-id="' + o.c.id + '">' +
+          '<div class="prow-top"><span class="pn">' + esc(o.c.name) + '</span><span class="pp">' + (o.entry.pct ? '+' + o.entry.pct.toFixed(0) + '%' : '') + '</span></div>' +
+          (o.entry.label ? '<div class="plabel">' + esc(o.entry.label) + '</div>' : '') + '</div>';
       }).join('');
       Array.prototype.forEach.call(listEl.querySelectorAll('.gs-picker-row'), function (row) {
+        var oc = GS_CARD_BY_ID[+row.dataset.id];
         row.onclick = function () { gsAssignCard(rowIdx, cellIdx, +row.dataset.id); };
         row.ondragstart = function (e) { e.dataTransfer.setData('text/card-id', row.dataset.id); };
+        if (oc) bindHoverTip(row, oc.name, oc.desc);
       });
     }
     body.innerHTML = '<h3>' + esc(slotLabel) + ' · 選卡</h3>' +
@@ -960,7 +989,7 @@
     body.querySelector('.gs-picker-search').oninput = function (e) { doRender(e.target.value); };
     doRender('');
   }
-  function gsRenderAll() { gsRenderHeader(); gsRenderGrid(); gsRenderPower(); }
+  function gsRenderAll() { gsRenderGrid(); gsRenderSummary(); }
 
   function initGearSim() {
     gsRenderJobSelect();
@@ -972,91 +1001,95 @@
   // ---------------- 職業分析：跟「裝備模擬」是兩回事——這裡是TAG分近戰/遠戰/法系
   // 各屬性的配卡「指南」（列出實際該插哪些卡），不是可以手動調整的模擬器。 ----------------
   var JA_H2 = 'font-size:1.15em;color:var(--accent);margin:0 0 4px';
-  var JA_TAG_ORDER = ['近戰', '遠戰', '水屬性', '地屬性', '火屬性', '風屬性', '毒屬性', '聖屬性', '暗屬性', '念屬性', '不死屬性'];
-
-  function jaTagColor(tag) {
-    if (tag === '近戰') return 'var(--accent)';
-    if (tag === '遠戰') return 'var(--sheet)';
-    var el = tag.replace('屬性', '');
-    return GS_ELEMENT_COLOR[el] || '#8a8a8a';
-  }
-  function jaAllTagsPresent() {
-    var set = {};
-    GS.jobs.forEach(function (j) { j.scenarios.forEach(function (s) { set[s.label] = true; }); });
-    return JA_TAG_ORDER.filter(function (t) { return set[t]; });
-  }
   function jaFormatGear(gear) {
     return gear.map(function (slot) {
       if (!slot.cards.length && !slot.base) return '';
       var head = slot.slot + (slot.item ? '（' + slot.item + '）' : '');
-      var cardTxt = slot.cards.map(function (c) { return c.name + ' +' + c.pct + '%'; }).join('、');
-      var baseTxt = slot.base ? '底座 +' + slot.base + '%' + (cardTxt ? '，' : '') : '';
-      return '<div class="ja-gear-row"><span class="slot">' + esc(head) + '</span><span class="cards">' + baseTxt + esc(cardTxt) + '</span></div>';
+      var cardTxt = slot.cards.map(function (c) {
+        var label = c.label || (c.name + ' +' + c.pct + '%');
+        return '<span class="ja-card-chip" data-tip-title="' + esc(c.name) + '" data-tip-desc="' + esc(c.desc || '') + '">' +
+          esc(c.name) + '：' + esc(label) + '</span>';
+      }).join('');
+      // 「底座」本身指的是武器/防具這件裝備自己內建的加成（不是插進去的卡），使用者
+      // 問過這是什麼意思——之前只顯示一個裸數字，現在改成跟卡片一樣，把武器/防具
+      // 自己的說明文字拆開顯示，看得出來是「精煉加成」還是別的什麼效果。
+      var baseTxt = (slot.baseParts || []).map(function (p) {
+        return '<span class="ja-card-chip" data-tip-title="' + esc(slot.item || '') + '" data-tip-desc="' + esc(slot.itemDesc || '') + '">' +
+          esc(slot.item) + '（裝備本身）：' + esc(p.label) + '</span>';
+      }).join('');
+      return '<div class="ja-gear-row"><span class="slot">' + esc(head) + '</span><span class="cards">' + baseTxt + cardTxt + '</span></div>';
     }).join('');
   }
 
-  var JOB_ANALYSIS_HTML = [
-    '<h2 style="' + JA_H2 + '">職業輸出排行</h2>',
-    '<p class="gs-footnote" style="margin:0 0 12px">同一個1轉根職業只列分數最高的那條線（例如忍者兩條分支只留較高分的一條），完整配卡明細見下方依TAG分類。</p>',
-    '<div id="jaRankList"></div>',
+  // 使用者喜歡裝備模擬「下拉選職業 + TAG選情境」這個組合，職業分析也照同一套設計：
+  // 下拉選單選職業，TAG chips選近戰/遠戰/屬性（這是職業底下的第二層，不是職業本身）。
+  var jaState = { jobIdx: 0, scenIdx: 0 };
 
-    '<h2 style="' + JA_H2 + ';margin-top:24px">依TAG看配卡建議</h2>',
-    '<p class="gs-footnote" style="margin:0 0 10px">近戰/遠戰是物理職業依技能距離分類；法系依技能命中的屬性（原生或石碑轉屬）分類——點一個TAG，下面列出所有屬於這個分類的職業實際該插哪些卡。</p>',
-    '<div class="ja-tag-bar" id="jaTagBar"></div>',
-    '<div id="jaTagBody"></div>',
+  function jaCurrentJob() { return GS.jobs[jaState.jobIdx]; }
+  function jaCurrentScenario() { return jaCurrentJob().scenarios[jaState.scenIdx]; }
+
+  var JOB_ANALYSIS_HTML = [
+    '<div class="gs-toolbar">',
+    '<select id="jaJobSelect"></select>',
+    '<div class="gs-chip-row" id="jaScenarioChips"></div>',
+    '</div>',
+    '<div id="jaJobBody"></div>',
 
     '<h2 style="' + JA_H2 + ';margin-top:24px">必備卡片</h2>',
     '<p class="gs-footnote" style="margin:0 0 12px">跨全部職業、全部情境的推薦配裝裡最常被選中的卡片——出現次數越高，代表越多不同打法都靠它，越接近「沒有它就打不動」。</p>',
     '<div class="ja-essential-grid" id="jaEssentialGrid"></div>',
   ].join('');
 
-  var jaState = { tag: null };
-
-  function jaRenderTagBar() {
-    var tags = jaAllTagsPresent();
-    if (!jaState.tag) jaState.tag = tags[0];
-    document.getElementById('jaTagBar').innerHTML = tags.map(function (t) {
-      var active = t === jaState.tag;
-      var style = active ? 'background:' + jaTagColor(t) + ';border-color:' + jaTagColor(t) + ';color:#fff' : '';
-      return '<button class="gs-chip ja-tagchip" data-tag="' + esc(t) + '" style="' + style + '">' + esc(t) + '</button>';
-    }).join('');
-    Array.prototype.forEach.call(document.querySelectorAll('.ja-tagchip'), function (btn) {
-      btn.onclick = function () { jaState.tag = btn.dataset.tag; jaRenderTagBar(); jaRenderTagBody(); };
-    });
-  }
-
-  function jaRenderTagBody() {
-    var tag = jaState.tag;
-    var rows = [];
-    GS.jobs.forEach(function (j) {
-      j.scenarios.forEach(function (s) {
-        if (s.label === tag) rows.push({ job: j, s: s });
+  function gearToEntries(gear) {
+    var entries = [];
+    gear.forEach(function (slot) {
+      if (slot.baseParts && slot.baseParts.length) {
+        slot.baseParts.forEach(function (p) {
+          entries.push({ name: slot.item, desc: slot.itemDesc, label: p.label, pct: p.pct, category: p.category });
+        });
+      }
+      slot.cards.forEach(function (c) {
+        (c.parts && c.parts.length ? c.parts : [{ label: c.label, pct: c.pct, category: '其他' }]).forEach(function (p) {
+          entries.push({ name: c.name, desc: c.desc, label: p.label, pct: p.pct, category: p.category });
+        });
       });
     });
-    rows.sort(function (a, b) { return b.s.power - a.s.power; });
-    document.getElementById('jaTagBody').innerHTML = rows.map(function (r) {
-      var j = r.job, s = r.s;
-      return '<div class="ja-tag-card">' +
-        '<div class="ja-tag-card-head">' +
-        '<div><h4>' + esc(j.job) + '</h4><div class="ja-chain">' + esc(j.chain.join(' > ')) + '</div></div>' +
-        '<div class="ja-tag-card-power"><div class="lbl">輸出分數</div><div class="val">' + Math.round(s.power).toLocaleString('en-US') + '</div></div>' +
-        '</div>' +
-        '<div class="ja-skill-line">主力技能：<b>' + esc(s.skill) + '</b>（' + (j.phys ? 'ATK ' : 'MATK ') + s.skillPct + '%）' +
-        '　被動+' + s.buffPct + '%　石碑+' + s.stonePct + '%</div>' +
-        '<div class="ja-gear-list">' + jaFormatGear(s.gear) + '</div>' +
-        '</div>';
-    }).join('') || '<div class="gs-picker-empty">這個分類目前沒有職業資料</div>';
+    return entries;
+  }
+
+  function jaRenderJobSelect() {
+    var sel = document.getElementById('jaJobSelect');
+    sel.innerHTML = GS.jobs.map(function (j, i) { return '<option value="' + i + '">' + esc(j.chain.join(' > ')) + '</option>'; }).join('');
+    sel.value = jaState.jobIdx;
+    sel.onchange = function () { jaState.jobIdx = +sel.value; jaState.scenIdx = 0; jaRenderChips(); jaRenderBody(); };
+  }
+  function jaRenderChips() {
+    var wrap = document.getElementById('jaScenarioChips');
+    var j = jaCurrentJob();
+    wrap.innerHTML = j.scenarios.map(function (s, i) {
+      return '<button class="gs-chip' + (i === jaState.scenIdx ? ' active' : '') + '" data-i="' + i + '">' + esc(s.label) + '</button>';
+    }).join('');
+    Array.prototype.forEach.call(wrap.querySelectorAll('.gs-chip'), function (btn) {
+      btn.onclick = function () { jaState.scenIdx = +btn.dataset.i; jaRenderChips(); jaRenderBody(); };
+    });
+  }
+  function jaRenderBody() {
+    var j = jaCurrentJob(), s = jaCurrentScenario();
+    document.getElementById('jaJobBody').innerHTML =
+      '<div class="ja-tag-card">' +
+      '<div class="ja-tag-card-head"><div><h4>' + esc(j.job) + '</h4><div class="ja-chain">' + esc(j.chain.join(' > ')) + '</div></div></div>' +
+      '<div class="ja-subhead">素質整合表</div>' +
+      '<div class="stat-table-wrap">' + renderStatTable(gearToEntries(s.gear)) + '</div>' +
+      '<div class="ja-subhead">逐格裝備明細</div>' +
+      '<div class="ja-gear-list">' + jaFormatGear(s.gear) + '</div>' +
+      '</div>';
+    bindHoverTipsIn(document.getElementById('jaJobBody'));
   }
 
   function initJobAnalysis() {
-    document.getElementById('jaRankList').innerHTML = GS.ranking.map(function (r, i) {
-      return '<div class="ja-rank-row"><div class="n">' + (i + 1) + '</div>' +
-        '<div>' + esc(r.job) + '<span class="root">' + esc(r.root) + '系</span></div>' +
-        '<div class="p">' + Math.round(r.power).toLocaleString('en-US') + '</div></div>';
-    }).join('');
-
-    jaRenderTagBar();
-    jaRenderTagBody();
+    jaRenderJobSelect();
+    jaRenderChips();
+    jaRenderBody();
 
     document.getElementById('jaEssentialGrid').innerHTML = GS.essential.map(function (e) {
       return '<div class="ja-ess-card"><div class="n" title="' + esc(e.name) + '">' + esc(e.name) + '</div>' +
@@ -1163,6 +1196,84 @@
   function esc(s) {
     if (s === null || s === undefined) return '';
     return s.toString().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  // ---------- 自訂滑鼠浮框（取代原生title的黃色系統提示框） ----------
+  function positionHoverTip(e) {
+    var el = document.getElementById('hoverTip');
+    if (!el || el.style.display !== 'block') return;
+    var pad = 16;
+    var x = e.clientX + pad, y = e.clientY + pad;
+    var maxX = window.innerWidth - el.offsetWidth - 8;
+    var maxY = window.innerHeight - el.offsetHeight - 8;
+    if (x > maxX) x = e.clientX - el.offsetWidth - pad;
+    if (y > maxY) y = e.clientY - el.offsetHeight - pad;
+    el.style.left = Math.max(8, x) + 'px';
+    el.style.top = Math.max(8, y) + 'px';
+  }
+  function showHoverTip(e, title, desc) {
+    var el = document.getElementById('hoverTip');
+    if (!el) return;
+    el.innerHTML = '<b>' + esc(title) + '</b>' + esc(desc || '');
+    el.style.display = 'block';
+    positionHoverTip(e);
+  }
+  function hideHoverTip() {
+    var el = document.getElementById('hoverTip');
+    if (el) el.style.display = 'none';
+  }
+  function bindHoverTip(node, title, desc) {
+    node.addEventListener('mouseenter', function (e) { showHoverTip(e, title, desc); });
+    node.addEventListener('mousemove', positionHoverTip);
+    node.addEventListener('mouseleave', hideHoverTip);
+  }
+  function bindHoverTipsIn(container) {
+    Array.prototype.forEach.call(container.querySelectorAll('[data-tip-title]'), function (node) {
+      bindHoverTip(node, node.dataset.tipTitle, node.dataset.tipDesc);
+    });
+  }
+
+  // ---------- 素質整合表：把entries=[{name,desc,label,pct}]依「label文字」分組加總，
+  // 同一句素質敘述來自好幾張卡就合併成一列，來源卡名各自附上hover顯示完整卡片效果。
+  // 裝備模擬、職業分析共用同一份邏輯跟排版，兩邊看到的整合表格式一致。 ----------
+  // 使用者要求：整合表不要效果文字原封不動複製上去堆成一長串，要分類整理——
+  // 這裡先照Python那邊算好的category分組（近戰限定/遠戰限定/對特定目標/屬性相關/
+  // 物理攻擊力/魔法攻擊力/其他），組內才是「同一句素質」合併加總，比單純攤平列出
+  // 好讀很多，也看得出來哪些是穩拿的、哪些要打對目標才吃得到。
+  var STAT_CATEGORY_ORDER = ['物理攻擊力', '魔法攻擊力', '近戰限定', '遠戰限定', '屬性相關', '對特定目標', '其他'];
+
+  function buildStatTable(entries) {
+    var byCategory = {};
+    STAT_CATEGORY_ORDER.forEach(function (c) { byCategory[c] = { byLabel: {}, order: [] }; });
+    entries.forEach(function (e) {
+      if (!e.pct) return;
+      var cat = byCategory[e.category] ? e.category : '其他';
+      var g = byCategory[cat];
+      if (!g.byLabel[e.label]) { g.byLabel[e.label] = { label: e.label, pct: 0, sources: [] }; g.order.push(e.label); }
+      g.byLabel[e.label].pct += e.pct;
+      g.byLabel[e.label].sources.push({ name: e.name, desc: e.desc || '' });
+    });
+    return STAT_CATEGORY_ORDER.map(function (cat) {
+      var g = byCategory[cat];
+      var rows = g.order.map(function (l) { return g.byLabel[l]; }).sort(function (a, b) { return b.pct - a.pct; });
+      return { category: cat, rows: rows };
+    }).filter(function (g) { return g.rows.length; });
+  }
+  function renderStatTable(entries) {
+    var groups = buildStatTable(entries);
+    if (!groups.length) return '<div class="gs-summary-empty">目前沒有任何有加成效果的卡片</div>';
+    var body = groups.map(function (g) {
+      var rows = g.rows.map(function (r) {
+        var srcHtml = r.sources.map(function (s) {
+          return '<span class="stat-src-chip" data-tip-title="' + esc(s.name) + '" data-tip-desc="' + esc(s.desc) + '">' + esc(s.name) + '</span>';
+        }).join('');
+        return '<tr><td class="stat-label">' + esc(r.label) + '</td>' +
+          '<td class="stat-pct">+' + r.pct.toFixed(0) + '%</td>' +
+          '<td class="stat-src">' + srcHtml + '</td></tr>';
+      }).join('');
+      return '<tr class="stat-group-row"><td colspan="3">' + esc(g.category) + '</td></tr>' + rows;
+    }).join('');
+    return '<table class="stat-table"><thead><tr><th>素質效果</th><th>合計</th><th>來源</th></tr></thead><tbody>' + body + '</tbody></table>';
   }
 
   // ---------- 各分頁定義 ----------
