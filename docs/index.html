@@ -877,6 +877,120 @@
     });
   }
 
+  // ---------- 收藏套裝效果整合：把自由格式的bonus文字盡量解析成數值加總 ----------
+  // 套裝效果是策劃手打的自由格式中文/英文混合文字，沒有結構化資料可用，這裡是盡力而為的
+  // 規則比對：認得出「XX + 數字 %」這類明確格式的才加總，認不出的（技能學習、機率觸發、
+  // 條件式效果等）一律原文列在「其他效果」，不會為了湊加總硬猜出可能錯的數字。
+
+  var STAT_ALIAS = {
+    'atk': 'ATK', 'matk': 'MATK', 'def': 'DEF', 'mdef': 'MDEF',
+    'res': 'RES', 'mres': 'MRES', 'patk': 'PATK', 'smatk': 'SMATK',
+    'mhp': 'MHP', 'maxhp': 'MHP', 'hp': 'MHP',
+    'msp': 'MSP', 'maxsp': 'MSP', 'sp': 'MSP',
+    'cri': 'CRI', 'aspd': 'ASPD',
+    'allstats': '全能力', 'all status': '全能力',
+    '力量': '力量', '體質': '體質', '靈巧': '靈巧', '敏捷': '敏捷', '智慧': '智慧', '幸運': '幸運',
+    '全能力': '全能力',
+  };
+
+  function normStatToken(tok) {
+    var t = (tok || '').trim();
+    if (!t) return null;
+    var low = t.toLowerCase().replace(/\s+/g, ' ');
+    if (Object.prototype.hasOwnProperty.call(STAT_ALIAS, low)) return STAT_ALIAS[low];
+    if (Object.prototype.hasOwnProperty.call(STAT_ALIAS, t)) return STAT_ALIAS[t];
+    return null;
+  }
+
+  function tryParseClause(clause) {
+    var m = clause.match(/^(.+?)\s*(\+|-|增加|提高|減少|降低)\s*(\d+(?:\.\d+)?)\s*(%|％)?\s*(傷害|抗性)?\s*$/);
+    if (m) {
+      return {
+        phrase: m[1].trim() + (m[5] || ''),
+        sign: (m[2] === '-' || m[2] === '減少' || m[2] === '降低') ? -1 : 1,
+        num: parseFloat(m[3]),
+        unit: m[4] ? '%' : 'flat',
+      };
+    }
+    m = clause.match(/^(.+?)\s*(\d+(?:\.\d+)?)\s*點\s*$/);
+    if (m) {
+      return { phrase: m[1].trim(), sign: 1, num: parseFloat(m[2]), unit: 'flat' };
+    }
+    return null;
+  }
+
+  function resolveSegment(segment) {
+    // 「、」在原始文字裡有兩種用法：有時是分隔好幾條各自獨立的加成（"ALL STATUS+5、MHP+1000"），
+    // 有時是同一條加成裡列舉好幾個修飾詞（"水、火、暗屬性魔法傷害+15%"）。用貪婪合併解決：
+    // 每次多吃一段用「、」隔開的碎片，只要湊出來的字串能完整比對成一條加成就切一刀，
+    // 不然就繼續往後吃，這樣「水」「火」這種沒有數字的孤兒碎片不會被誤判成獨立效果。
+    var parts = segment.split(/、/).map(function (s) { return s.trim(); }).filter(Boolean);
+    var resolved = [];
+    var buf = '';
+    parts.forEach(function (part, i) {
+      buf = buf ? (buf + '、' + part) : part;
+      var direct = tryParseClause(buf);
+      var isLast = i === parts.length - 1;
+      if (direct) {
+        resolved.push({ kind: 'num', value: direct });
+        buf = '';
+      } else if (isLast) {
+        resolved.push({ kind: 'left', value: buf });
+        buf = '';
+      }
+    });
+    return resolved;
+  }
+
+  function parseBonusText(text) {
+    var numeric = [];
+    var leftover = [];
+    if (!text) return { numeric: numeric, leftover: leftover };
+    var segments = text.split(/[；;]/).map(function (s) { return s.trim(); }).filter(Boolean);
+    segments.forEach(function (segment) {
+      resolveSegment(segment).forEach(function (item) {
+        if (item.kind === 'left') {
+          leftover.push(item.value);
+          return;
+        }
+        var phrase = item.value.phrase, sign = item.value.sign, num = item.value.num, unit = item.value.unit;
+        // 同一句列了好幾個屬性用 / & 、 或空白隔開的話（例如「ATK/MATK +150」），
+        // 每個屬性都各自吃到同一個數值，不是把數值拆給每個屬性分
+        var rawTokens = phrase.split(/[\/&、]+/).map(function (s) { return s.trim(); }).filter(Boolean);
+        var normed = rawTokens.map(normStatToken);
+        if (rawTokens.length > 1 && normed.every(function (x) { return x; })) {
+          normed.forEach(function (key) { numeric.push({ key: key, sign: sign, value: num, unit: unit }); });
+        } else {
+          var single = normStatToken(phrase);
+          numeric.push({ key: single || phrase, sign: sign, value: num, unit: unit });
+        }
+      });
+    });
+    return { numeric: numeric, leftover: leftover };
+  }
+
+  function aggregateCollectionBonuses(entries) {
+    var totals = {};
+    var leftovers = [];
+    entries.forEach(function (e) {
+      var parsed = parseBonusText(e.bonus);
+      parsed.numeric.forEach(function (n) {
+        var k = n.key + '|' + n.unit;
+        totals[k] = (totals[k] || 0) + n.sign * n.value;
+      });
+      parsed.leftover.forEach(function (text) { leftovers.push({ setName: e.name, text: text }); });
+    });
+    return { totals: totals, leftovers: leftovers };
+  }
+
+  function formatTotalLine(key) {
+    var parts = key.split('|');
+    var stat = parts[0], unit = parts[1];
+    var val = this.totals[key];
+    var sign = val > 0 ? '+' : '';
+    return stat + ' ' + sign + val + (unit === '%' ? '%' : '');
+  }
+
   function renderCollectionStats() {
     var el = document.getElementById('collectionStats');
     if (!el) return;
@@ -888,17 +1002,27 @@
     var st = loadCollectionState();
     var done = CARD_SETS.filter(function (e) { return isSetCollected(e, st); });
     if (done.length === 0) {
-      el.innerHTML = '<div class="stats-title">已完成套裝效果</div>' +
+      el.innerHTML = '<div class="stats-title">已完成套裝效果整合</div>' +
         '<div class="stats-empty">目前還沒有完成任何套裝</div>';
       return;
     }
-    var rows = done.map(function (e) {
-      return '<div class="stats-row">' +
-        '<div class="stats-row-name">' + esc(e.name) + '</div>' +
-        '<div class="stats-row-bonus">' + esc(e.bonus || '（無說明）') + '</div>' +
-      '</div>';
-    }).join('');
-    el.innerHTML = '<div class="stats-title">已完成套裝效果（共 ' + done.length + ' 組）</div>' + rows;
+    var agg = aggregateCollectionBonuses(done);
+    var totalKeys = Object.keys(agg.totals).sort();
+    var totalHtml = totalKeys.length
+      ? '<div class="stats-row">' + totalKeys.map(function (k) {
+          return '<div>' + esc(formatTotalLine.call(agg, k)) + '</div>';
+        }).join('') + '</div>'
+      : '';
+    var leftoverHtml = agg.leftovers.length
+      ? '<div class="stats-title" style="margin-top:10px">其他效果（無法加總，逐條列出）</div>' +
+        agg.leftovers.map(function (lo) {
+          return '<div class="stats-row"><div class="stats-row-name">' + esc(lo.setName) + '</div>' +
+            '<div class="stats-row-bonus">' + esc(lo.text) + '</div></div>';
+        }).join('')
+      : '';
+    el.innerHTML = '<div class="stats-title">已完成套裝效果整合（共 ' + done.length + ' 組）</div>' +
+      (totalHtml || '<div class="stats-empty">目前完成的套裝沒有可加總的數值效果</div>') +
+      leftoverHtml;
   }
 
   function render() {
