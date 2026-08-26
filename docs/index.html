@@ -239,6 +239,46 @@
     cursor: pointer;
   }
   .card-check-input { cursor: pointer; }
+  .set-status-check {
+    pointer-events: none;
+    accent-color: var(--sheet);
+  }
+  .filter-progress {
+    font-size: 0.82em;
+    color: var(--muted);
+    margin-left: 4px;
+  }
+  .filter-progress.done { color: var(--sheet); font-weight: 600; }
+  .floating-stats {
+    display: none;
+    position: fixed;
+    top: 110px;
+    right: 18px;
+    width: 260px;
+    max-height: 70vh;
+    overflow-y: auto;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-size: 0.85em;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    z-index: 5;
+  }
+  .floating-stats.visible { display: block; }
+  @media (max-width: 1300px) {
+    .floating-stats.visible { display: none; }
+  }
+  .stats-title {
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+  .stats-empty { color: var(--muted); }
+  .stats-row { margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+  .stats-row:last-child { border-bottom: none; }
+  .stats-row-name { font-weight: 600; margin-bottom: 2px; }
+  .stats-row-bonus { color: var(--text); line-height: 1.4; }
   .pager {
     display: flex;
     justify-content: center;
@@ -395,6 +435,7 @@
   <div class="grid" id="list"></div>
   <div class="pager" id="pager"></div>
 </main>
+<div class="floating-stats" id="collectionStats"></div>
 
 <script src="data/items_data.js"></script>
 <script src="data/cards_data.js"></script>
@@ -431,6 +472,7 @@
 
   var COLLECTION_STORE_KEY = 'ro_collection_progress_v1';
   var CARD_SETS = [];
+  var CARD_NAME_BY_ID = {};
   (function () {
     var cats = (window.CARD_SETS_DATA && window.CARD_SETS_DATA.categories) || {};
     Object.keys(cats).forEach(function (cat) {
@@ -438,6 +480,7 @@
         entry.key = cat + '::' + entry.index;
         entry._ord = CARD_SETS.length;
         CARD_SETS.push(entry);
+        entry.cards.forEach(function (c) { CARD_NAME_BY_ID[c.id] = c.name; });
       });
     });
   })();
@@ -571,6 +614,12 @@
             key: 'category', label: '分類', multi: true,
             options: distinctValues(CARD_SETS, function (x) { return x.category; }),
             test: function (x, selected) { return selected.indexOf(x.category) !== -1; },
+            progress: function (opt) {
+              var state = loadCollectionState();
+              var inCat = CARD_SETS.filter(function (x) { return x.category === opt; });
+              var done = inCat.filter(function (x) { return isSetCollected(x, state); }).length;
+              return { done: done, total: inCat.length };
+            },
           },
           {
             key: 'status', label: '狀態', multi: false,
@@ -718,6 +767,7 @@
       '<div class="card-head">' +
         '<span class="card-id">#' + entry.index + '</span>' +
         '<span class="card-name">' + esc(entry.name) + '</span>' +
+        '<input type="checkbox" class="set-status-check" disabled' + (collected ? ' checked' : '') + '>' +
         '<span class="badge ' + (collected ? 'badge-yes' : 'badge-no') + '">' + (collected ? '已收藏' : '未收藏') + '</span>' +
       '</div>' +
       '<div class="card-sub">' + esc(entry.category) + '</div>' +
@@ -800,6 +850,45 @@
     return list;
   }
 
+  function refreshFilterProgress() {
+    var cfg = TABS[state.tab];
+    var groupDefs = cfg.filterGroups();
+    var defsByKey = {};
+    groupDefs.forEach(function (d) { defsByKey[d.key] = d; });
+    Array.prototype.forEach.call(document.querySelectorAll('.chip[data-progress-key]'), function (chip) {
+      var def = defsByKey[chip.dataset.progressKey];
+      var prog = chip.querySelector('.filter-progress');
+      if (!def || !def.progress || !prog) return;
+      var p = def.progress(chip.dataset.progressOpt);
+      prog.className = 'filter-progress' + (p.done === p.total && p.total > 0 ? ' done' : '');
+      prog.textContent = '(' + p.done + '/' + p.total + (p.done === p.total && p.total > 0 ? ' ✓' : '') + ')';
+    });
+  }
+
+  function renderCollectionStats() {
+    var el = document.getElementById('collectionStats');
+    if (!el) return;
+    if (state.tab !== 'collection') {
+      el.classList.remove('visible');
+      return;
+    }
+    el.classList.add('visible');
+    var st = loadCollectionState();
+    var done = CARD_SETS.filter(function (e) { return isSetCollected(e, st); });
+    if (done.length === 0) {
+      el.innerHTML = '<div class="stats-title">已完成套裝效果</div>' +
+        '<div class="stats-empty">目前還沒有完成任何套裝</div>';
+      return;
+    }
+    var rows = done.map(function (e) {
+      return '<div class="stats-row">' +
+        '<div class="stats-row-name">' + esc(e.name) + '</div>' +
+        '<div class="stats-row-bonus">' + esc(e.bonus || '（無說明）') + '</div>' +
+      '</div>';
+    }).join('');
+    el.innerHTML = '<div class="stats-title">已完成套裝效果（共 ' + done.length + ' 組）</div>' + rows;
+  }
+
   function render() {
     if (state.tab === 'jobs' && state.chainDetail !== null) {
       renderChainDetailView();
@@ -841,6 +930,9 @@
       pagerEl.appendChild(info);
       pagerEl.appendChild(next);
     }
+
+    renderCollectionStats();
+    if (state.tab === 'collection') refreshFilterProgress();
   }
 
   // ---------- 進階選擇面板 ----------
@@ -907,6 +999,17 @@
         chip.appendChild(input);
         chip.appendChild(mark);
         chip.appendChild(span);
+
+        if (def.progress) {
+          chip.dataset.progressKey = def.key;
+          chip.dataset.progressOpt = opt;
+          var p = def.progress(opt);
+          var prog = document.createElement('span');
+          prog.className = 'filter-progress' + (p.done === p.total && p.total > 0 ? ' done' : '');
+          prog.textContent = '(' + p.done + '/' + p.total + (p.done === p.total && p.total > 0 ? ' ✓' : '') + ')';
+          chip.appendChild(prog);
+        }
+
         row.appendChild(chip);
       });
 
@@ -983,7 +1086,20 @@
   });
 
   document.getElementById('exportBtn').addEventListener('click', function () {
-    var data = JSON.stringify(loadCollectionState(), null, 1);
+    var st = loadCollectionState();
+    var cardNames = {};
+    Object.keys(st).forEach(function (k) {
+      if (!st[k] || k.indexOf('card::') !== 0) return;
+      var id = k.slice(6);
+      cardNames[id] = CARD_NAME_BY_ID[id] || null;
+    });
+    var payload = {
+      version: 2,
+      exportedAt: new Date().toISOString(),
+      state: st,
+      cardNames: cardNames,
+    };
+    var data = JSON.stringify(payload, null, 1);
     var blob = new Blob([data], { type: 'application/json' });
     var url = URL.createObjectURL(blob);
     var a = document.createElement('a');
@@ -1006,8 +1122,11 @@
     reader.onload = function () {
       try {
         var incoming = JSON.parse(reader.result);
+        // 舊版匯出檔（v1）是扁平的 {"card::123":true,...}；v2 多包了一層 {version,state,cardNames}，
+        // 兩種格式都要吃得下去，不然舊備份檔會突然匯不進來
+        var incomingState = (incoming && incoming.version === 2 && incoming.state) ? incoming.state : incoming;
         var merged = loadCollectionState();
-        Object.keys(incoming).forEach(function (k) { merged[k] = !!incoming[k]; });
+        Object.keys(incomingState).forEach(function (k) { merged[k] = !!incomingState[k]; });
         saveCollectionState(merged);
         render();
         alert('匯入完成，已更新收藏勾選狀態。');
