@@ -238,11 +238,21 @@
     font-size: 0.88em;
     cursor: pointer;
   }
-  .card-check-input { cursor: pointer; }
-  .set-status-check {
-    pointer-events: none;
+  .card-check-input {
+    cursor: pointer;
+    width: 16px;
+    height: 16px;
     accent-color: var(--sheet);
   }
+  .set-status-check {
+    cursor: pointer;
+    width: 19px;
+    height: 19px;
+    accent-color: var(--sheet);
+    transition: transform 0.1s ease;
+  }
+  .set-status-check:hover { transform: scale(1.12); }
+  .set-status-check:active { transform: scale(0.95); }
   .filter-progress {
     font-size: 0.82em;
     color: var(--muted);
@@ -472,6 +482,7 @@
 
   var COLLECTION_STORE_KEY = 'ro_collection_progress_v1';
   var CARD_SETS = [];
+  var CARD_SETS_BY_KEY = {};
   var CARD_NAME_BY_ID = {};
   (function () {
     var cats = (window.CARD_SETS_DATA && window.CARD_SETS_DATA.categories) || {};
@@ -480,6 +491,7 @@
         entry.key = cat + '::' + entry.index;
         entry._ord = CARD_SETS.length;
         CARD_SETS.push(entry);
+        CARD_SETS_BY_KEY[entry.key] = entry;
         entry.cards.forEach(function (c) { CARD_NAME_BY_ID[c.id] = c.name; });
       });
     });
@@ -767,7 +779,7 @@
       '<div class="card-head">' +
         '<span class="card-id">#' + entry.index + '</span>' +
         '<span class="card-name">' + esc(entry.name) + '</span>' +
-        '<input type="checkbox" class="set-status-check" disabled' + (collected ? ' checked' : '') + '>' +
+        '<input type="checkbox" class="set-status-check" data-set-key="' + esc(entry.key) + '"' + (collected ? ' checked' : '') + '>' +
         '<span class="badge ' + (collected ? 'badge-yes' : 'badge-no') + '">' + (collected ? '已收藏' : '未收藏') + '</span>' +
       '</div>' +
       '<div class="card-sub">' + esc(entry.category) + '</div>' +
@@ -1076,6 +1088,17 @@
   // ---------- 收藏套裝：勾選記錄 / 匯出匯入 ----------
 
   listEl.addEventListener('change', function (e) {
+    var setBox = e.target.closest && e.target.closest('.set-status-check');
+    if (setBox) {
+      var entry = CARD_SETS_BY_KEY[setBox.dataset.setKey];
+      if (!entry) return;
+      var state1 = loadCollectionState();
+      // 一次把整組套裝的卡片勾滿/取消，跟逐張手動勾的效果一樣（同一張卡在別組套裝裡的狀態也會連動）
+      entry.cards.forEach(function (c) { state1['card::' + c.id] = setBox.checked; });
+      saveCollectionState(state1);
+      render();
+      return;
+    }
     var box = e.target.closest && e.target.closest('.card-check-input');
     if (!box) return;
     var state2 = loadCollectionState();
