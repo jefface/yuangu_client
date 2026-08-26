@@ -503,6 +503,7 @@
     <button class="tab-btn" data-tab="jobs">職業</button>
     <button class="tab-btn" data-tab="collection">收藏</button>
     <button class="tab-btn" data-tab="formula">公式</button>
+    <button class="tab-btn" data-tab="jobAdjust">職業調整</button>
   </div>
   <div class="controls">
     <input type="text" id="search" placeholder="搜尋名稱或描述...">
@@ -528,6 +529,8 @@
 <script src="data/skills_data.js"></script>
 <script src="data/job_chains_data.js"></script>
 <script src="data/card_sets_data.js"></script>
+<script src="data/equipment_sets_data.js"></script>
+<script src="data/job_adjustments_data.js"></script>
 <script>
 (function () {
   var PAGE_SIZE = 60;
@@ -574,25 +577,24 @@
     '<h3>全段ATK怎麼組成 <span class="formula-tag inferred">官方RO Renewal公版知識，未核對你貼過的原文</span></h3>',
     '<div class="formula-code">全段ATK = (前段總ATK + 後段總ATK) × (1+遠距增傷%) × (1+暴擊增傷%) × 其他倍率</div>',
 
-    '<p class="formula-note"><b>前段總ATK</b>——會被下面那些%乘區放大的那一段，由兩塊組成：</p>',
-    '<ul class="formula-note">',
-    '<li><b>StatusATK（素質換算攻擊力）</b>：由STR為主換算出來的基礎值（常見寫法接近 STR + (STR/10)²），',
-    '再加上DEX、LUK各自貢獻一小部分；弓類武器DEX的權重通常比劍類更高</li>',
-    '<li><b>WeaponATK（武器面板ATK）</b>：武器本身顯示的攻擊力數值，含精煉加成（精煉表見上面「精煉換算」章節）</li>',
-    '</ul>',
-    '<p class="formula-note">這兩塊加起來，才是會被「物理攻擊力%／ATK%」卡片、體型修正(大/中/小)這類百分比乘區直接放大的基礎盤。</p>',
+    '<h4 style="margin:10px 0 4px">前段總ATK</h4>',
+    '<div class="formula-code">前段總ATK = StatusATK + WeaponATK\n\nStatusATK = STR + floor(STR / 10)² + floor(DEX / 5) + floor(LUK / 5)\n（弓類/槍械武器：公式裡STR、DEX的角色互換，改成以DEX為主）\n\nWeaponATK = 武器本身面板ATK + 精煉加成（依武器等級1~5查精煉表，是每一級固定加值，\n            不是百分比，例如武器等級1、+15時是+30、+20時是+60，跳點不是線性的）</div>',
+    '<p class="formula-note">前段總ATK就是「素質算出來的基礎值」加「武器本身+精煉」，這兩塊合起來才是「物理攻擊力%／ATK%」卡片、',
+    '體型修正(大/中/小)這類百分比乘區直接乘上去放大的對象。</p>',
 
-    '<p class="formula-note"><b>後段總ATK</b>——卡片/裝備提供的固定 +ATK 數值（不是百分比），例如「ATK +150」這種卡面寫法。',
-    '這段通常不會被前段那些百分比乘區放大，是先算完前段的百分比、再把這段加進去，等於是「加法疊加」而不是',
-    '「乘法疊加」，數值上比前段的等量%加成更不划算，但因為門檻低、來源多，還是配裝常用的一部分。</p>',
+    '<h4 style="margin:10px 0 4px">後段總ATK</h4>',
+    '<div class="formula-code">後段總ATK = Σ 卡片固定+ATK ＋ Σ 裝備固定+ATK ＋ Σ 消耗品/藥水固定+ATK\n（全部是卡面寫「ATK +N」這種固定數值直接加總，不是百分比，也不會再被前段的%乘區放大）</div>',
+    '<p class="formula-note">後段是先把前段的百分比乘區算完之後，才用加法疊上去的固定值，所以同樣數字的「固定+ATK」',
+    '換算下來，划算程度比不上「前段基礎盤×同等%加成」，但因為卡面上很常見、門檻低，還是配裝常用的一塊。</p>',
 
-    '<p class="formula-note"><b>其他倍率</b>——原始公式notation裡的統稱項，不是單一固定數值，而是「除了遠距增傷、暴擊增傷這兩個',
-    '有另外具名列出來的乘區之外，還可能存在的其他百分比加成」的佔位符，例如彈藥/箭矢加成、特定狀態下的額外',
-    '倍率等，視當下情況決定要不要乘進去，沒有相關效果時這一項就是 ×1（等於沒有影響）。</p>',
+    '<h4 style="margin:10px 0 4px">其他倍率</h4>',
+    '<p class="formula-note">這不是單一固定數值，是公式notation裡的統稱佔位符，泛指「除了遠距增傷%、暴擊增傷%這兩個',
+    '有另外具名列出來的乘區之外，還可能存在的其他百分比加成」，例如彈藥/箭矢加成、特定狀態下的額外倍率等，',
+    '視當下裝備/技能情況決定要不要乘進去，沒有相關效果時這一項就是 ×1（沒有影響）。</p>',
 
-    '<p class="formula-note">⚠️ 以上是官方RO現行版（Renewal）通用的ATK拆法，不是這台私服另外驗證過的結果，也還沒核對到',
-    '你之前貼過的那篇網頁具體寫法（那篇連結/內容目前不在我這邊的記錄裡）——如果你手上還留著，麻煩重新貼一次，',
-    '我用來核對、修正上面這段內容跟標籤。</p>',
+    '<p class="formula-note">⚠️ 以上（尤其StatusATK的確切係數）是官方RO現行版（Renewal）通用的ATK拆法，不是這台私服另外',
+    '驗證過的結果，也還沒核對到你之前貼過的那篇網頁具體寫法（那篇連結/內容目前不在我這邊的記錄裡）——',
+    '如果你手上還留著，麻煩重新貼一次，我用來核對、修正上面這段內容跟標籤。</p>',
 
     '<h3>完整結構（含軟防曲線） <span class="formula-tag inferred">推論</span></h3>',
     '<div class="formula-code">硬防 = DEF（直接扣減的固定值）\n軟防 = RES × 3\n軟防減傷比例 = (4000 + 軟防) / (4000 + 10 × 軟防)\n\n傷害 = 全段ATK × 技能倍率% × (1+技能增傷%) × 軟防減傷比例 − 硬防</div>',
@@ -677,6 +679,28 @@
     return chain;
   });
 
+  var JOB_ADJUST_ORDER = [
+    '盧恩龍爵', '帝國禁衛軍', '機甲神匠', '生命締造者', '禁咒魔導士', '元素支配者',
+    '十字暗影', '深淵獵人', '樞機主教', '聖裁者', '風鷹', '天籟頌者 / 樂之舞靈',
+    '天帝', '契靈士', '疾風 / 流浪忍者', '夜巡者', '終極初學者', '靈魂術士', '德魯伊',
+  ];
+  var JOB_ADJUSTMENTS = [];
+  (function () {
+    var classes = (window.JOB_ADJUSTMENTS_DATA && window.JOB_ADJUSTMENTS_DATA.classes) || {};
+    var keys = JOB_ADJUST_ORDER.filter(function (k) { return classes[k]; })
+      .concat(Object.keys(classes).filter(function (k) { return JOB_ADJUST_ORDER.indexOf(k) === -1; }));
+    keys.forEach(function (jobName) {
+      classes[jobName].skills.forEach(function (sk) {
+        JOB_ADJUSTMENTS.push({
+          job: jobName,
+          name: sk.name,
+          notes: sk.notes,
+          _ord: JOB_ADJUSTMENTS.length,
+        });
+      });
+    });
+  })();
+
   function stepSkillIds(step) {
     var set = {};
     step.ids.forEach(function (id) {
@@ -691,19 +715,27 @@
   var COLLECTION_STORE_KEY = 'ro_collection_progress_v1';
   var CARD_SETS = [];
   var CARD_SETS_BY_KEY = {};
-  var CARD_NAME_BY_ID = {};
+  var NAME_BY_STATE_KEY = {};
   (function () {
-    var cats = (window.CARD_SETS_DATA && window.CARD_SETS_DATA.categories) || {};
-    Object.keys(cats).forEach(function (cat) {
-      cats[cat].forEach(function (entry) {
-        entry.key = cat + '::' + entry.index;
-        entry._ord = CARD_SETS.length;
-        CARD_SETS.push(entry);
-        CARD_SETS_BY_KEY[entry.key] = entry;
-        entry.cards.forEach(function (c) { CARD_NAME_BY_ID[c.id] = c.name; });
+    // 卡片收藏(card_sets)、裝備收藏(equipment_sets)兩份資料格式刻意一致，直接合併進同一份清單，
+    // 只靠entry.kind（'card'/'equipment'）決定localStorage key前綴，避免卡片ID跟裝備ID萬一撞號互相干擾
+    [window.CARD_SETS_DATA, window.EQUIPMENT_SETS_DATA].forEach(function (dataset) {
+      var cats = (dataset && dataset.categories) || {};
+      Object.keys(cats).forEach(function (cat) {
+        cats[cat].forEach(function (entry) {
+          entry.key = cat + '::' + entry.index;
+          entry._ord = CARD_SETS.length;
+          CARD_SETS.push(entry);
+          CARD_SETS_BY_KEY[entry.key] = entry;
+          entry.cards.forEach(function (c) { NAME_BY_STATE_KEY[stateKey(entry.kind, c.id)] = c.name; });
+        });
       });
     });
   })();
+
+  function stateKey(kind, id) {
+    return (kind === 'equipment' ? 'equip' : 'card') + '::' + id;
+  }
 
   function loadCollectionState() {
     try {
@@ -719,11 +751,11 @@
       // localStorage 不可用（例如無痕視窗封鎖）就放棄記憶，不影響當前畫面顯示
     }
   }
-  function isCardOwned(cardId, state) {
-    return !!state['card::' + cardId];
+  function isCardOwned(kind, cardId, state) {
+    return !!state[stateKey(kind, cardId)];
   }
   function isSetCollected(entry, state) {
-    return entry.cards.length > 0 && entry.cards.every(function (c) { return isCardOwned(c.id, state); });
+    return entry.cards.length > 0 && entry.cards.every(function (c) { return isCardOwned(entry.kind, c.id, state); });
   }
 
   function norm(s) { return (s || '').toString().toLowerCase(); }
@@ -757,6 +789,19 @@
     });
     var ordered = SLOT_TAG_ORDER.filter(function (s) { return set[s]; });
     var rest = Object.keys(set).filter(function (s) { return SLOT_TAG_ORDER.indexOf(s) === -1; }).sort();
+    return ordered.concat(rest);
+  }
+
+  var COLLECTION_CATEGORY_ORDER = ['王卡收藏', '普卡收藏', 'ZA收藏', '靈石收藏', '特殊收藏', '武器收藏', '防具收藏'];
+
+  function orderedValues(list, keyFn, fixedOrder) {
+    var set = {};
+    list.forEach(function (x) {
+      var v = keyFn(x);
+      if (v) set[v] = true;
+    });
+    var ordered = fixedOrder.filter(function (s) { return set[s]; });
+    var rest = Object.keys(set).filter(function (s) { return fixedOrder.indexOf(s) === -1; }).sort();
     return ordered.concat(rest);
   }
 
@@ -832,7 +877,7 @@
         return [
           {
             key: 'category', label: '分類', multi: true,
-            options: distinctValues(CARD_SETS, function (x) { return x.category; }),
+            options: orderedValues(CARD_SETS, function (x) { return x.category; }, COLLECTION_CATEGORY_ORDER),
             test: function (x, selected) { return selected.indexOf(x.category) !== -1; },
             progress: function (opt) {
               var state = loadCollectionState();
@@ -856,11 +901,27 @@
       sortKey: function (x) { return x._ord; },
       render: renderCardSetCard,
     },
+    jobAdjust: {
+      data: JOB_ADJUSTMENTS,
+      match: matchJobAdjust,
+      filterGroups: function () {
+        return [
+          {
+            key: 'job', label: '職業', multi: false,
+            options: orderedValues(JOB_ADJUSTMENTS, function (x) { return x.job; }, JOB_ADJUST_ORDER),
+            defaultValue: '',
+            test: function (x, selected) { return x.job === selected; },
+          },
+        ];
+      },
+      sortKey: function (x) { return x._ord; },
+      render: renderJobAdjustCard,
+    },
   };
 
   function matchItem(it, q) {
     if (!q) return true;
-    var blob = norm(it.name) + ' ' + norm(it.uname) + ' ' + norm(it.series) + ' ' + norm(it.equip) + ' ' + norm((it.jobs || []).join(' '));
+    var blob = norm(it.name) + ' ' + norm(it.uname) + ' ' + norm(it.series) + ' ' + norm(it.equip) + ' ' + norm((it.jobs || []).join(' ')) + ' ' + norm(it.id);
     if (blob.indexOf(q) !== -1) return true;
     for (var i = 0; i < it.variants.length; i++) {
       if (norm(textBlob(it.variants[i].desc)).indexOf(q) !== -1) return true;
@@ -879,7 +940,7 @@
 
   function matchCard(c, q) {
     if (!q) return true;
-    var blob = norm(c.name);
+    var blob = norm(c.name) + ' ' + norm(c.id);
     if (c.sheet) blob += ' ' + norm(textBlob(c.sheet.effects));
     (c.client || []).forEach(function (v) { blob += ' ' + norm(textBlob(v.desc)); });
     return blob.indexOf(q) !== -1;
@@ -894,7 +955,14 @@
   function matchCardSet(entry, q) {
     if (!q) return true;
     var blob = norm(entry.name) + ' ' + norm(entry.bonus) + ' ' +
-      norm(entry.cards.map(function (c) { return c.name; }).join(' '));
+      norm(entry.cards.map(function (c) { return c.name + ' ' + c.id; }).join(' '));
+    return blob.indexOf(q) !== -1;
+  }
+
+  function matchJobAdjust(entry, q) {
+    if (!q) return true;
+    var blob = norm(entry.job) + ' ' + norm(entry.name) + ' ' +
+      norm(entry.notes.map(function (n) { return n.text; }).join(' '));
     return blob.indexOf(q) !== -1;
   }
 
@@ -976,9 +1044,9 @@
     var collected = isSetCollected(entry, state);
 
     var cardsHtml = entry.cards.map(function (c) {
-      var owned = isCardOwned(c.id, state);
+      var owned = isCardOwned(entry.kind, c.id, state);
       return '<label class="set-card-line">' +
-        '<input type="checkbox" class="card-check-input" data-card-id="' + c.id + '"' + (owned ? ' checked' : '') + '>' +
+        '<input type="checkbox" class="card-check-input" data-card-id="' + c.id + '" data-kind="' + entry.kind + '"' + (owned ? ' checked' : '') + '>' +
         ' ' + esc(c.name) + ' #' + c.id + ' [x' + c.need + ']' +
       '</label>';
     }).join('');
@@ -993,6 +1061,20 @@
       '<div class="card-sub">' + esc(entry.category) + '</div>' +
       '<div class="set-cards">' + cardsHtml + '</div>' +
       '<div class="set-bonus">套裝能力：' + esc(entry.bonus || '（無）') + '</div>' +
+    '</div>';
+  }
+
+  function renderJobAdjustCard(entry) {
+    var notesHtml = entry.notes.map(function (n) {
+      var label = n.type ? '<b>' + esc(n.type) + '：</b>' : '';
+      return '<div class="desc-line">' + label + esc(n.text) + '</div>';
+    }).join('');
+    return '<div class="card">' +
+      '<div class="card-head">' +
+        '<span class="badge badge-client">' + esc(entry.job) + '</span>' +
+        '<span class="card-name">' + esc(entry.name) + '</span>' +
+      '</div>' +
+      '<div class="variant">' + (notesHtml || '<div class="desc-line">（無說明）</div>') + '</div>' +
     '</div>';
   }
 
@@ -1099,6 +1181,8 @@
     'allstats': '全能力', 'all status': '全能力',
     '力量': '力量', '體質': '體質', '靈巧': '靈巧', '敏捷': '敏捷', '智慧': '智慧', '幸運': '幸運',
     '全能力': '全能力',
+    // 裝備收藏的套裝能力常用英文素質縮寫（大小寫不一），統一併進對應的中文素質key
+    'str': '力量', 'vit': '體質', 'agi': '敏捷', 'dex': '靈巧', 'int': '智慧', 'luk': '幸運',
   };
 
   function normStatToken(tok) {
@@ -1110,69 +1194,63 @@
     return null;
   }
 
-  function tryParseClause(clause) {
-    var m = clause.match(/^(.+?)\s*(\+|-|增加|提高|減少|降低)\s*(\d+(?:\.\d+)?)\s*(%|％)?\s*(傷害|抗性)?\s*$/);
-    if (m) {
-      return {
-        phrase: m[1].trim() + (m[5] || ''),
-        sign: (m[2] === '-' || m[2] === '減少' || m[2] === '降低') ? -1 : 1,
-        num: parseFloat(m[3]),
-        unit: m[4] ? '%' : 'flat',
-      };
-    }
-    m = clause.match(/^(.+?)\s*(\d+(?:\.\d+)?)\s*點\s*$/);
-    if (m) {
-      return { phrase: m[1].trim(), sign: 1, num: parseFloat(m[2]), unit: 'flat' };
-    }
-    return null;
-  }
+  // 全域單一掃描：不管分隔符號是；、,或/，一律掃出每一個「(運算子)數字(%)?(傷害|抗性)?」或
+  // 「數字點」出現的位置當作一條加成的結尾，前面到上一條結尾為止（去掉開頭的分隔符號跟空白）
+  // 就是這條加成的屬性名稱。比先各種符號硬切再個別比對可靠很多——例如「DEF + 35 / MDEF + 35」
+  // 每個屬性都各自帶了自己的數字，不是共用同一個尾端數字，用切割符號硬分會切錯。
+  var BONUS_OP_RE = /(\+|-|增加|提高|減少|降低)\s*(\d+(?:\.\d+)?)\s*(%|％)?\s*(傷害|抗性)?|(\d+(?:\.\d+)?)\s*點/g;
+  var BONUS_SEP_STRIP_RE = /^[；;、,，/\s]+/;
 
-  function resolveSegment(segment) {
-    // 「、」在原始文字裡有兩種用法：有時是分隔好幾條各自獨立的加成（"ALL STATUS+5、MHP+1000"），
-    // 有時是同一條加成裡列舉好幾個修飾詞（"水、火、暗屬性魔法傷害+15%"）。用貪婪合併解決：
-    // 每次多吃一段用「、」隔開的碎片，只要湊出來的字串能完整比對成一條加成就切一刀，
-    // 不然就繼續往後吃，這樣「水」「火」這種沒有數字的孤兒碎片不會被誤判成獨立效果。
-    var parts = segment.split(/、/).map(function (s) { return s.trim(); }).filter(Boolean);
-    var resolved = [];
-    var buf = '';
-    parts.forEach(function (part, i) {
-      buf = buf ? (buf + '、' + part) : part;
-      var direct = tryParseClause(buf);
-      var isLast = i === parts.length - 1;
-      if (direct) {
-        resolved.push({ kind: 'num', value: direct });
-        buf = '';
-      } else if (isLast) {
-        resolved.push({ kind: 'left', value: buf });
-        buf = '';
+  function parseSegment(segment) {
+    var numeric = [];
+    var leftover = [];
+    var cursor = 0;
+    var m;
+    BONUS_OP_RE.lastIndex = 0;
+    var found = false;
+    while ((m = BONUS_OP_RE.exec(segment)) !== null) {
+      found = true;
+      var phrase = segment.slice(cursor, m.index).replace(BONUS_SEP_STRIP_RE, '').trim();
+      cursor = BONUS_OP_RE.lastIndex;
+      if (!phrase) continue;
+      var sign, num, unit;
+      if (m[1] !== undefined) {
+        sign = (m[1] === '-' || m[1] === '減少' || m[1] === '降低') ? -1 : 1;
+        num = parseFloat(m[2]);
+        unit = m[3] ? '%' : 'flat';
+        phrase = phrase + (m[4] || '');
+      } else {
+        sign = 1;
+        num = parseFloat(m[5]);
+        unit = 'flat';
       }
-    });
-    return resolved;
+      var rawTokens = phrase.split(/[\/&、]+/).map(function (s) { return s.trim(); }).filter(Boolean);
+      var normed = rawTokens.map(normStatToken);
+      if (rawTokens.length > 1 && normed.every(function (x) { return x; })) {
+        normed.forEach(function (key) { numeric.push({ key: key, sign: sign, value: num, unit: unit }); });
+      } else {
+        var single = normStatToken(phrase);
+        numeric.push({ key: single || phrase, sign: sign, value: num, unit: unit });
+      }
+    }
+    if (!found) {
+      var whole = segment.trim();
+      if (whole) leftover.push(whole);
+      return { numeric: numeric, leftover: leftover };
+    }
+    var trailing = segment.slice(cursor).replace(BONUS_SEP_STRIP_RE, '').trim();
+    if (trailing) leftover.push(trailing);
+    return { numeric: numeric, leftover: leftover };
   }
 
   function parseBonusText(text) {
     var numeric = [];
     var leftover = [];
     if (!text) return { numeric: numeric, leftover: leftover };
-    var segments = text.split(/[；;]/).map(function (s) { return s.trim(); }).filter(Boolean);
-    segments.forEach(function (segment) {
-      resolveSegment(segment).forEach(function (item) {
-        if (item.kind === 'left') {
-          leftover.push(item.value);
-          return;
-        }
-        var phrase = item.value.phrase, sign = item.value.sign, num = item.value.num, unit = item.value.unit;
-        // 同一句列了好幾個屬性用 / & 、 或空白隔開的話（例如「ATK/MATK +150」），
-        // 每個屬性都各自吃到同一個數值，不是把數值拆給每個屬性分
-        var rawTokens = phrase.split(/[\/&、]+/).map(function (s) { return s.trim(); }).filter(Boolean);
-        var normed = rawTokens.map(normStatToken);
-        if (rawTokens.length > 1 && normed.every(function (x) { return x; })) {
-          normed.forEach(function (key) { numeric.push({ key: key, sign: sign, value: num, unit: unit }); });
-        } else {
-          var single = normStatToken(phrase);
-          numeric.push({ key: single || phrase, sign: sign, value: num, unit: unit });
-        }
-      });
+    text.split(/[；;]/).map(function (s) { return s.trim(); }).filter(Boolean).forEach(function (segment) {
+      var r = parseSegment(segment);
+      numeric = numeric.concat(r.numeric);
+      leftover = leftover.concat(r.leftover);
     });
     return { numeric: numeric, leftover: leftover };
   }
@@ -1199,6 +1277,15 @@
     return stat + ' ' + sign + val + (unit === '%' ? '%' : '');
   }
 
+  function updateFloatingStatsTop() {
+    // 浮動視窗的top是寫死的，但header展開「進階選擇」後會變高，蓋住浮動視窗——
+    // 改成每次header高度可能變動時，動態量header實際底部在哪，浮動視窗貼在它下面就不會重疊
+    var header = document.querySelector('header');
+    var el = document.getElementById('collectionStats');
+    if (!header || !el) return;
+    el.style.top = (header.getBoundingClientRect().bottom + 12) + 'px';
+  }
+
   function renderCollectionStats() {
     var el = document.getElementById('collectionStats');
     if (!el) return;
@@ -1207,6 +1294,7 @@
       return;
     }
     el.classList.add('visible');
+    updateFloatingStatsTop();
     var st = loadCollectionState();
     var done = CARD_SETS.filter(function (e) { return isSetCollected(e, st); });
     if (done.length === 0) {
@@ -1342,7 +1430,9 @@
         if (isChecked) chip.classList.add('checked');
 
         var input = document.createElement('input');
-        input.type = def.multi ? 'checkbox' : 'radio';
+        // 單選(status這類)也用checkbox而不是radio——radio原生點已選取的那顆不會觸發change、
+        // 也沒辦法取消選取，改成手動維護「同組只能選一個」的邏輯，這樣才能點兩下取消篩選、回到全部顯示
+        input.type = 'checkbox';
         input.name = 'adv-' + def.key;
         input.checked = isChecked;
         input.addEventListener('change', function () {
@@ -1351,10 +1441,14 @@
             if (input.checked && idx === -1) g.selected.push(opt);
             if (!input.checked && idx !== -1) g.selected.splice(idx, 1);
             chip.classList.toggle('checked', input.checked);
-          } else {
+          } else if (input.checked) {
             g.selected = opt;
             Array.prototype.forEach.call(row.querySelectorAll('.chip'), function (c) { c.classList.remove('checked'); });
+            Array.prototype.forEach.call(row.querySelectorAll('input'), function (i) { if (i !== input) i.checked = false; });
             chip.classList.add('checked');
+          } else {
+            g.selected = '';
+            chip.classList.remove('checked');
           }
           state.page = 1;
           render();
@@ -1425,7 +1519,10 @@
     var open = panel.classList.toggle('open');
     this.classList.toggle('on', open);
     this.textContent = open ? '進階選擇 ▲' : '進階選擇 ▾';
+    updateFloatingStatsTop();
   });
+
+  window.addEventListener('resize', updateFloatingStatsTop);
 
   Array.prototype.forEach.call(document.querySelectorAll('.tab-btn'), function (btn) {
     btn.addEventListener('click', function () { switchTab(btn.dataset.tab); });
@@ -1455,8 +1552,8 @@
       var entry = CARD_SETS_BY_KEY[setBox.dataset.setKey];
       if (!entry) return;
       var state1 = loadCollectionState();
-      // 一次把整組套裝的卡片勾滿/取消，跟逐張手動勾的效果一樣（同一張卡在別組套裝裡的狀態也會連動）
-      entry.cards.forEach(function (c) { state1['card::' + c.id] = setBox.checked; });
+      // 一次把整組套裝的卡片/裝備勾滿/取消，跟逐張手動勾的效果一樣（同一項在別組套裝裡的狀態也會連動）
+      entry.cards.forEach(function (c) { state1[stateKey(entry.kind, c.id)] = setBox.checked; });
       saveCollectionState(state1);
       render();
       return;
@@ -1464,7 +1561,7 @@
     var box = e.target.closest && e.target.closest('.card-check-input');
     if (!box) return;
     var state2 = loadCollectionState();
-    state2['card::' + box.dataset.cardId] = box.checked;
+    state2[stateKey(box.dataset.kind, box.dataset.cardId)] = box.checked;
     saveCollectionState(state2);
     // 同一張卡可能出現在好幾組套裝裡，勾一次要讓所有相關套裝的完成狀態一起更新，直接整頁重繪最保險
     render();
@@ -1474,9 +1571,8 @@
     var st = loadCollectionState();
     var cardNames = {};
     Object.keys(st).forEach(function (k) {
-      if (!st[k] || k.indexOf('card::') !== 0) return;
-      var id = k.slice(6);
-      cardNames[id] = CARD_NAME_BY_ID[id] || null;
+      if (!st[k]) return;
+      cardNames[k] = NAME_BY_STATE_KEY[k] || null;
     });
     var payload = {
       version: 2,
