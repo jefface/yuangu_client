@@ -2,3 +2,4 @@ __pycache__/
 *.pyc
 database/scripts/_tmp_sheet/
 php
+.gitignore.bak
