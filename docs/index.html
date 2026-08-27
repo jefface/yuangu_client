@@ -259,25 +259,55 @@
     margin-left: 4px;
   }
   .filter-progress.done { color: var(--sheet); font-weight: 600; }
+  /* 改成抽屜：外層只負責定位，把手(固定寬度)跟內容區(寬度用transition展開/收合)用flex排在一起，
+     這樣收合時只是內容區width變0，不會像transform位移那樣讓元素跑到viewport外面 */
   .floating-stats {
     display: none;
     position: fixed;
     top: 110px;
     right: 18px;
-    width: 260px;
-    max-height: 70vh;
-    overflow-y: auto;
+    z-index: 5;
+    align-items: flex-start;
+  }
+  .floating-stats.visible { display: flex; }
+  @media (max-width: 1300px) {
+    .floating-stats.visible { display: none; }
+  }
+  .floating-stats-handle {
+    flex: none;
+    width: 32px;
+    padding: 10px 0;
     background: var(--panel);
     border: 1px solid var(--border);
-    border-radius: 8px;
+    border-radius: 8px 0 0 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    writing-mode: vertical-rl;
+    text-align: center;
+    font-size: 0.82em;
+    font-weight: 600;
+    color: var(--accent);
+    cursor: pointer;
+    user-select: none;
+  }
+  .floating-stats-body {
+    flex: none;
+    box-sizing: border-box;
+    width: 0;
+    max-height: 70vh;
+    overflow: hidden;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-left: none;
+    border-radius: 0 8px 8px 0;
     padding: 12px 14px;
     font-size: 0.85em;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    z-index: 5;
+    transition: width 0.25s ease;
   }
-  .floating-stats.visible { display: block; }
-  @media (max-width: 1300px) {
-    .floating-stats.visible { display: none; }
+  .floating-stats.open .floating-stats-body {
+    width: 260px;
+    /* 收合時overflow:hidden是為了不讓內容在寬度縮小過程中溢出，展開後才恢復可捲動 */
+    overflow-y: auto;
   }
   .stats-title {
     font-weight: 600;
@@ -643,7 +673,8 @@
 <script>
 (function () {
   var PAGE_SIZE = 60;
-  var state = { tab: 'items', page: 1, search: '', filters: {}, chainDetail: null };
+  // collectionStatsOpen 只存在記憶體中、不做localStorage持久化，每次重新整理/切回收藏頁都固定從收起狀態開始
+  var state = { tab: 'items', page: 1, search: '', filters: {}, chainDetail: null, collectionStatsOpen: false };
 
   var FORMULA_HTML = [
     '<div class="formula-section">',
@@ -1801,31 +1832,37 @@
       return;
     }
     el.classList.add('visible');
+    // 抽屜開合是獨立於「內容重繪」的狀態，每次重繪都照state.collectionStatsOpen還原，
+    // 不會因為資料更新（例如剛匯入收藏進度）就把使用者手動展開的抽屜打回收起狀態
+    el.classList.toggle('open', state.collectionStatsOpen);
     updateFloatingStatsTop();
     var st = loadCollectionState();
     var done = CARD_SETS.filter(function (e) { return isSetCollected(e, st); });
+    var bodyHtml;
     if (done.length === 0) {
-      el.innerHTML = '<div class="stats-title">已完成套裝效果整合</div>' +
+      bodyHtml = '<div class="stats-title">已完成套裝效果整合</div>' +
         '<div class="stats-empty">目前還沒有完成任何套裝</div>';
-      return;
+    } else {
+      var agg = aggregateCollectionBonuses(done);
+      var totalKeys = Object.keys(agg.totals).sort();
+      var totalHtml = totalKeys.length
+        ? '<div class="stats-row">' + totalKeys.map(function (k) {
+            return '<div>' + esc(formatTotalLine.call(agg, k)) + '</div>';
+          }).join('') + '</div>'
+        : '';
+      var leftoverHtml = agg.leftovers.length
+        ? '<div class="stats-title" style="margin-top:10px">其他效果（無法加總，逐條列出）</div>' +
+          agg.leftovers.map(function (lo) {
+            return '<div class="stats-row"><div class="stats-row-name">' + esc(lo.setName) + '</div>' +
+              '<div class="stats-row-bonus">' + esc(lo.text) + '</div></div>';
+          }).join('')
+        : '';
+      bodyHtml = '<div class="stats-title">已完成套裝效果整合（共 ' + done.length + ' 組）</div>' +
+        (totalHtml || '<div class="stats-empty">目前完成的套裝沒有可加總的數值效果</div>') +
+        leftoverHtml;
     }
-    var agg = aggregateCollectionBonuses(done);
-    var totalKeys = Object.keys(agg.totals).sort();
-    var totalHtml = totalKeys.length
-      ? '<div class="stats-row">' + totalKeys.map(function (k) {
-          return '<div>' + esc(formatTotalLine.call(agg, k)) + '</div>';
-        }).join('') + '</div>'
-      : '';
-    var leftoverHtml = agg.leftovers.length
-      ? '<div class="stats-title" style="margin-top:10px">其他效果（無法加總，逐條列出）</div>' +
-        agg.leftovers.map(function (lo) {
-          return '<div class="stats-row"><div class="stats-row-name">' + esc(lo.setName) + '</div>' +
-            '<div class="stats-row-bonus">' + esc(lo.text) + '</div></div>';
-        }).join('')
-      : '';
-    el.innerHTML = '<div class="stats-title">已完成套裝效果整合（共 ' + done.length + ' 組）</div>' +
-      (totalHtml || '<div class="stats-empty">目前完成的套裝沒有可加總的數值效果</div>') +
-      leftoverHtml;
+    el.innerHTML = '<div class="floating-stats-handle">收藏統計</div>' +
+      '<div class="floating-stats-body">' + bodyHtml + '</div>';
   }
 
   function render() {
@@ -2156,6 +2193,14 @@
     };
     reader.readAsText(file, 'utf-8');
     e.target.value = '';
+  });
+
+  // 用事件委派綁在#collectionStats本身（renderCollectionStats只換它的innerHTML，容器不會被重建），
+  // 這樣把手不管重繪幾次都吃得到點擊，不用每次renderCollectionStats()都重新綁一次監聽
+  document.getElementById('collectionStats').addEventListener('click', function (e) {
+    if (!e.target.closest('.floating-stats-handle')) return;
+    state.collectionStatsOpen = !state.collectionStatsOpen;
+    this.classList.toggle('open', state.collectionStatsOpen);
   });
 
   buildAdvancedPanel();
