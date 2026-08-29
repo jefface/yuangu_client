@@ -652,6 +652,17 @@
   .ja-scenario-block:first-of-type { border-top: none; padding-top: 0; }
   .ja-scenario-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
   .stag { font-weight: 600; padding: 2px 10px; border-radius: 999px; font-size: 0.78em; color: #fff; white-space: nowrap; }
+  .drop-chip {
+    display: inline-block; background: var(--accent-bg); color: var(--accent);
+    border-radius: 6px; padding: 2px 8px; font-size: 0.85em; margin: 0 6px 6px 0;
+  }
+  .monster-id-row { display: flex; align-items: center; gap: 6px; margin-top: 8px; }
+  .monster-id-text { font-family: var(--mono); color: var(--muted); font-size: 0.85em; margin-right: 2px; }
+  .copy-btn {
+    font-size: 0.78em; padding: 2px 8px; border-radius: 6px;
+    border: 1px solid var(--border); background: var(--panel); color: var(--muted); cursor: pointer;
+  }
+  .copy-btn:hover { border-color: var(--accent); color: var(--accent); }
   .ja-skill-line { font-size: 0.85em; color: var(--muted); }
   .ja-skill-line b { color: var(--text); }
   .ja-subhead { font-size: 0.72em; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin: 10px 0 4px; }
@@ -676,6 +687,7 @@
   <div class="tabs">
     <button class="tab-btn" data-tab="patchNotes">版本更新</button>
     <button class="tab-btn active" data-tab="items">物品</button>
+    <button class="tab-btn" data-tab="monsters">怪物</button>
     <button class="tab-btn" data-tab="cards">卡片</button>
     <button class="tab-btn" data-tab="jobs">職業</button>
     <button class="tab-btn" data-tab="collection">收藏</button>
@@ -714,13 +726,14 @@
 <script src="data/card_sets_data.js"></script>
 <script src="data/equipment_sets_data.js"></script>
 <script src="data/job_adjustments_data.js"></script>
+<script src="data/monsters_data.js"></script>
 <script src="data/patch_notes_data.js"></script>
 <script src="data/web_sim_data.js"></script>
 <script>
 (function () {
   var PAGE_SIZE = 60;
   // collectionStatsOpen 只存在記憶體中、不做localStorage持久化，每次重新整理/切回收藏頁都固定從收起狀態開始
-  var state = { tab: 'items', page: 1, search: '', filters: {}, chainDetail: null, collectionStatsOpen: false };
+  var state = { tab: 'items', page: 1, search: '', filters: {}, chainDetail: null, monsterDetail: null, collectionStatsOpen: false };
 
   // 版本更新頁：用TAG切換日期，一次只看一個版本的內容（跟裝備模擬/職業分析的情境TAG
   // 同一種模式），不是把所有版本堆在同一頁往下滑——版本一多，全部攤開會很難找到
@@ -925,6 +938,10 @@
   (GS.cards || []).forEach(function (c) { GS_CARD_BY_ID[c.id] = c; });
   var GS_SLOT_CAPACITY = { '武器': 4, '副手武器': 4, '鎧甲': 4, '鞋子': 4, '披肩': 4, '盾牌': 1, '裝飾品': 4, '頭上': 4, '頭中': 4, '頭下': 4 };
   var GS_ELEMENT_COLOR = { '水': '#2f6fa8', '地': '#8a5a2e', '火': '#b8452a', '風': '#2f9a86', '毒': '#5c8a2e', '聖': '#ad9330', '暗': '#6a4f9c', '念': '#a34c86', '不死': '#6f6478' };
+  // 怪物頁籤的TAG固定順序（照官方10大種族/9種屬性/3種體型的慣例排，不是照字母/出現次序）
+  var ELEMENT_ORDER = ['無', '水', '地', '火', '風', '毒', '聖', '暗', '念', '不死'];
+  var RACE_ORDER = ['無形', '人形', '惡魔', '植物', '動物', '昆蟲', '不死', '天使', '魚貝', '龍族'];
+  var SIZE_ORDER = ['小', '中', '大'];
 
   function gsCardFitsSlot(card, slotLabel) {
     var kws = GS.slotEquipKeywords[slotLabel];
@@ -1484,6 +1501,38 @@
       compare: itemCompare,
       render: renderItemCard,
     },
+    monsters: {
+      data: window.MONSTERS_DATA || [],
+      match: matchMonster,
+      filterGroups: function () {
+        return [
+          {
+            key: 'element', label: '屬性', multi: true,
+            options: orderedValues(TABS.monsters.data, function (x) { return x.element; }, ELEMENT_ORDER),
+            test: function (x, selected) { return selected.indexOf(x.element) !== -1; },
+          },
+          {
+            key: 'race', label: '種類', multi: true,
+            options: orderedValues(TABS.monsters.data, function (x) { return x.race; }, RACE_ORDER),
+            test: function (x, selected) { return selected.indexOf(x.race) !== -1; },
+          },
+          {
+            key: 'size', label: '體型', multi: true,
+            options: orderedValues(TABS.monsters.data, function (x) { return x.size; }, SIZE_ORDER),
+            test: function (x, selected) { return selected.indexOf(x.size) !== -1; },
+          },
+          {
+            key: 'mvp', label: 'MVP／一般', multi: true,
+            options: ['MVP', '一般'],
+            test: function (x, selected) {
+              return selected.indexOf(x.mvp ? 'MVP' : '一般') !== -1;
+            },
+          },
+        ];
+      },
+      sortKey: function (x) { return x.level; },
+      render: renderMonsterCard,
+    },
     cards: {
       data: window.CARDS_DATA || [],
       match: matchCard,
@@ -1724,6 +1773,68 @@
       '<div class="set-cards">' + cardsHtml + '</div>' +
       '<div class="set-bonus">套裝能力：' + esc(entry.bonus || '（無）') + '</div>' +
     '</div>';
+  }
+
+  function matchMonster(m, q) {
+    if (!q) return true;
+    return norm(m.name).indexOf(q) !== -1 || norm(m.id).indexOf(q) !== -1;
+  }
+
+  function renderMonsterCard(m) {
+    var elemText = m.element + (m.elementLevel ? m.elementLevel : '');
+    return '<div class="card monster-card" data-monster-id="' + m.id + '">' +
+      '<div class="card-head">' +
+        '<span class="badge badge-client">Lv.' + m.level + '</span>' +
+        (m.mvp ? '<span class="badge" style="background:#c0392b22;color:#c0392b">MVP</span>' : '') +
+        '<span class="card-name">' + esc(m.name) + '</span>' +
+      '</div>' +
+      '<div class="card-sub">' +
+        '<span class="stag" style="background:' + (GS_ELEMENT_COLOR[m.element] || '#8a8a8a') + '">' + esc(elemText) + '</span> ' +
+        '<span class="stag" style="background:var(--sheet)">' + esc(m.race) + '</span> ' +
+        '<span class="stag" style="background:var(--accent)">' + esc(m.size) + '</span>' +
+      '</div>' +
+      '<div class="monster-id-row">' +
+        '<span class="monster-id-text">#' + m.id + '</span>' +
+        '<button type="button" class="copy-btn" data-copy-value="' + m.id + '">複製ID</button>' +
+        '<button type="button" class="copy-btn" data-copy-value="' + esc(m.name) + '">複製名稱</button>' +
+      '</div>' +
+    '</div>';
+  }
+
+  function renderMonsterDetailView(m) {
+    var dropsHtml = m.drops.length
+      ? m.drops.map(function (d) { return '<span class="drop-chip">' + esc(d.itemName) + '</span>'; }).join('')
+      : '<div class="patch-empty">尚無資料（還沒抓到這隻的掉落清單）</div>';
+    var spawnsHtml = m.spawns.length
+      ? '<table class="stat-table"><thead><tr><th>地圖</th><th>隻數</th><th>重生時間</th></tr></thead><tbody>' +
+        m.spawns.map(function (s) {
+          return '<tr><td>' + esc(s.mapName) + '（' + esc(s.mapCode) + '）' + (s.floor && s.floor !== '隨機' ? '　' + esc(s.floor) : '') + '</td>' +
+            '<td>' + s.count + '</td><td>' + esc(s.respawn) + '</td></tr>';
+        }).join('') + '</tbody></table>'
+      : '<div class="patch-empty">尚無資料（還沒抓到這隻的出沒地圖）</div>';
+    var elemText = m.element + (m.elementLevel ? m.elementLevel : '');
+    return '<button class="back-btn" id="backToMonsters">← 返回怪物列表</button>' +
+      '<div class="job-detail-head"><span class="job-detail-title">' + esc(m.name) + '　#' + m.id + '</span></div>' +
+      '<div class="card-sub" style="margin-bottom:14px">' +
+        '<span class="stag" style="background:' + (GS_ELEMENT_COLOR[m.element] || '#8a8a8a') + '">' + esc(elemText) + '</span> ' +
+        '<span class="stag" style="background:var(--sheet)">' + esc(m.race) + '</span> ' +
+        '<span class="stag" style="background:var(--accent)">' + esc(m.size) + '</span>' +
+        (m.mvp ? ' <span class="badge" style="background:#c0392b22;color:#c0392b">MVP</span>' : '') +
+      '</div>' +
+      '<table class="stat-table" style="margin-bottom:18px">' +
+        '<tbody>' +
+        '<tr><td class="stat-label">等級</td><td class="stat-pct">' + m.level + '</td></tr>' +
+        '<tr><td class="stat-label">HP</td><td class="stat-pct">' + m.hp + '</td></tr>' +
+        '<tr><td class="stat-label">ATK</td><td class="stat-pct">' + m.atkMin + ' ~ ' + m.atkMax + '</td></tr>' +
+        '<tr><td class="stat-label">DEF／MDEF</td><td class="stat-pct">' + m.def + ' ／ ' + m.mdef + '</td></tr>' +
+        '<tr><td class="stat-label">命中／迴避</td><td class="stat-pct">' + m.hit + ' ／ ' + m.flee + '</td></tr>' +
+        '<tr><td class="stat-label">基本經驗／職業經驗</td><td class="stat-pct">' + m.baseExp + ' ／ ' + m.jobExp + '</td></tr>' +
+        '</tbody>' +
+      '</table>' +
+      '<div class="ja-subhead">掉落道具</div>' +
+      '<div style="margin-bottom:18px">' + dropsHtml + '</div>' +
+      '<div class="ja-subhead">出沒地圖</div>' +
+      spawnsHtml;
   }
 
   function renderJobAdjustCard(entry) {
@@ -2029,6 +2140,12 @@
       document.getElementById('list').style.display = 'none';
       document.getElementById('pager').innerHTML = '';
       document.getElementById('count').textContent = '';
+      // 原本只顯示自己的formulaPage，沒隱藏另外三個獨立頁面——使用者實測發現先點裝備模擬
+      // 再點公式，裝備模擬的內容還留著疊在下面，這裡補上跟gearsim/jobAnalysis/patchNotes
+      // 分支一樣的隱藏動作。
+      document.getElementById('gearsimPage').style.display = 'none';
+      document.getElementById('jobAnalysisPage').style.display = 'none';
+      document.getElementById('patchNotesPage').style.display = 'none';
       var fp = document.getElementById('formulaPage');
       fp.style.display = '';
       if (!fp.dataset.rendered) {
@@ -2089,6 +2206,15 @@
 
     if (state.tab === 'jobs' && state.chainDetail !== null) {
       renderChainDetailView();
+      return;
+    }
+    if (state.tab === 'monsters' && state.monsterDetail !== null) {
+      var mdListEl = document.getElementById('list');
+      mdListEl.className = '';
+      document.getElementById('count').textContent = '';
+      document.getElementById('pager').innerHTML = '';
+      var m = TABS.monsters.data.filter(function (x) { return x.id === state.monsterDetail; })[0];
+      mdListEl.innerHTML = m ? renderMonsterDetailView(m) : '<div class="patch-empty">找不到這隻怪物的資料。</div>';
       return;
     }
 
@@ -2228,6 +2354,7 @@
     state.page = 1;
     state.search = '';
     state.chainDetail = null;
+    state.monsterDetail = null;
     document.getElementById('search').value = '';
     Array.prototype.forEach.call(document.querySelectorAll('.tab-btn'), function (btn) {
       btn.classList.toggle('active', btn.dataset.tab === tab);
@@ -2277,9 +2404,39 @@
       return;
     }
     var card = e.target.closest && e.target.closest('.chain-card');
-    if (!card) return;
-    state.chainDetail = Number(card.dataset.chainIdx);
-    render();
+    if (card) {
+      state.chainDetail = Number(card.dataset.chainIdx);
+      render();
+      return;
+    }
+    if (e.target.closest && e.target.closest('#backToMonsters')) {
+      state.monsterDetail = null;
+      render();
+      return;
+    }
+    // 複製ID/複製名稱按鈕要先判斷、直接return，不然事件會冒泡到下面.monster-card的判斷，
+    // 變成複製完還跳去開詳細頁
+    var copyBtn = e.target.closest && e.target.closest('.copy-btn');
+    if (copyBtn) {
+      var val = copyBtn.dataset.copyValue;
+      var restoreText = copyBtn.textContent;
+      var doneText = restoreText.indexOf('ID') !== -1 ? 'ID已複製' : '名稱已複製';
+      var afterCopy = function () {
+        copyBtn.textContent = doneText;
+        setTimeout(function () { copyBtn.textContent = restoreText; }, 1200);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(val).then(afterCopy, afterCopy);
+      } else {
+        afterCopy();
+      }
+      return;
+    }
+    var mcard = e.target.closest && e.target.closest('.monster-card');
+    if (mcard) {
+      state.monsterDetail = Number(mcard.dataset.monsterId);
+      render();
+    }
   });
 
   // ---------- 收藏套裝：勾選記錄 / 匯出匯入 ----------
