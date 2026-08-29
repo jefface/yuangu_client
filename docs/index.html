@@ -1793,6 +1793,25 @@
     return { numeric: numeric, leftover: leftover };
   }
 
+  // 有些套裝系列(例如墮影之心一階~十階、企鵝寵物蛋)是「進階制」——同時擁有多階時
+  // 只有最高階的加成生效，不是每階分開疊加。用card_sets.json裡的tierGroup把同系列
+  // 分到同一組，組內只留擁有的裡面tierRank最大的那一筆，其餘從加總輸入裡拿掉；
+  // 沒有tierGroup欄位的套裝(絕大多數)完全不受影響，照原本邏輯全部疊加。
+  function filterTierGroups(entries) {
+    var bestInGroup = {};
+    entries.forEach(function (e) {
+      if (!e.tierGroup) return;
+      var cur = bestInGroup[e.tierGroup];
+      if (!cur || (e.tierRank || 0) > (cur.tierRank || 0)) {
+        bestInGroup[e.tierGroup] = e;
+      }
+    });
+    return entries.filter(function (e) {
+      if (!e.tierGroup) return true;
+      return bestInGroup[e.tierGroup] === e;
+    });
+  }
+
   function aggregateCollectionBonuses(entries) {
     var totals = {};
     var leftovers = [];
@@ -1843,7 +1862,7 @@
       bodyHtml = '<div class="stats-title">已完成套裝效果整合</div>' +
         '<div class="stats-empty">目前還沒有完成任何套裝</div>';
     } else {
-      var agg = aggregateCollectionBonuses(done);
+      var agg = aggregateCollectionBonuses(filterTierGroups(done));
       var totalKeys = Object.keys(agg.totals).sort();
       var totalHtml = totalKeys.length
         ? '<div class="stats-row">' + totalKeys.map(function (k) {
