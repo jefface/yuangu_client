@@ -245,6 +245,13 @@
     font-size: 0.88em;
     cursor: pointer;
   }
+  .set-note {
+    font-size: 0.88em;
+    color: var(--muted);
+    font-style: italic;
+    line-height: 1.5;
+    padding: 2px 0;
+  }
   .card-check-input {
     cursor: pointer;
     width: 16px;
@@ -1917,6 +1924,12 @@
         ' ' + esc(c.name) + ' #' + c.id + ' [x' + c.need + ']' +
       '</label>';
     }).join('');
+    // 少數組合（例如企鵝收集家系列）封包擷取當下沒抓到卡片/道具需求清單那幾行，
+    // cards會是空陣列——不是解析漏了，是原始擷取資料本身就缺那段，見note欄位
+    // （手動補的說明文字）交代已知資訊，不留一個看起來像bug的空白框
+    if (!cardsHtml && entry.note) {
+      cardsHtml = '<div class="set-note">' + esc(entry.note) + '</div>';
+    }
 
     // superseded：勾了、但同系列有更高階也勾了，這階實際沒在生效，整張卡標灰做區分，
     // 徽章文字額外註明原因，不是「未收藏」也不是正常的「已收藏」
