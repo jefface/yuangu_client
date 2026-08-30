@@ -1203,12 +1203,15 @@
     gear.forEach(function (slot) {
       if (slot.baseParts && slot.baseParts.length) {
         slot.baseParts.forEach(function (p) {
-          entries.push({ name: slot.item, desc: slot.itemDesc, label: p.label, pct: p.pct, category: p.category });
+          // template：後端build_gear_sim.py算好的分組模板(數值換成統一佔位符)，沒有的話
+          // (理論上不會，parts一律有算)退回用label自己當key，至少不會炸掉、只是不會跟
+          // 別的卡合併。
+          entries.push({ name: slot.item, desc: slot.itemDesc, label: p.label, pct: p.pct, category: p.category, template: p.template || p.label });
         });
       }
       slot.cards.forEach(function (c) {
         (c.parts && c.parts.length ? c.parts : [{ label: c.label, pct: c.pct, category: '其他' }]).forEach(function (p) {
-          entries.push({ name: c.name, desc: c.desc, label: p.label, pct: p.pct, category: p.category });
+          entries.push({ name: c.name, desc: c.desc, label: p.label, pct: p.pct, category: p.category, template: p.template || p.label });
         });
       });
     });
@@ -1414,19 +1417,31 @@
   // 好讀很多，也看得出來哪些是穩拿的、哪些要打對目標才吃得到。
   var STAT_CATEGORY_ORDER = ['物理攻擊力', '魔法攻擊力', '近戰限定', '遠戰限定', '屬性相關', '對特定目標', '其他'];
 
+  // 使用者實測回報：明明已經有詞條庫/MAPPING表，為什麼「地屬性最終魔法傷害+70%」
+  // 「+40%」「+20%」「+35%」這種同一種素質、只是來自不同卡片各自數值不同，還是被列成
+  // 4列沒有加總——根因是原本用e.label(整句原文，含卡片自己的那個百分比數字)當分組
+  // key，兩張卡文字只要差在數字就是不同字串，永遠併不起來；同一句素質理論上就是同一個
+  // 乘區，來自不同卡片時本來就該加總成一個數字。
+  //
+  // 2026-08-30更新：分組模板改成後端build_gear_sim.py的stat_group_key()直接算好，
+  // 前端不再自己用正則猜——概念上跟詞條庫(build_card_terms.py的placeholderize())
+  // 是同一套「模板/數值分離」設計：card_term_map.value1才是實際數字、term_dict.text
+  // 是不含數字的模板，這裡e.template就是那個模板，e.pct才是這張卡自己貢獻的數字，
+  // 前端只需要照template分組加總，不用自己重算一次「哪個數字該換成佔位符」。
   function buildStatTable(entries) {
     var byCategory = {};
-    STAT_CATEGORY_ORDER.forEach(function (c) { byCategory[c] = { byLabel: {}, order: [] }; });
+    STAT_CATEGORY_ORDER.forEach(function (c) { byCategory[c] = { byKey: {}, order: [] }; });
     entries.forEach(function (e) {
       if (!e.pct) return;
       var cat = byCategory[e.category] ? e.category : '其他';
       var g = byCategory[cat];
-      if (!g.byLabel[e.label]) { g.byLabel[e.label] = { label: e.label, pct: 0 }; g.order.push(e.label); }
-      g.byLabel[e.label].pct += e.pct;
+      var key = e.template;
+      if (!g.byKey[key]) { g.byKey[key] = { template: key, sampleLabel: e.label, pct: 0 }; g.order.push(key); }
+      g.byKey[key].pct += e.pct;
     });
     return STAT_CATEGORY_ORDER.map(function (cat) {
       var g = byCategory[cat];
-      var rows = g.order.map(function (l) { return g.byLabel[l]; }).sort(function (a, b) { return b.pct - a.pct; });
+      var rows = g.order.map(function (k) { return g.byKey[k]; }).sort(function (a, b) { return b.pct - a.pct; });
       return { category: cat, rows: rows };
     }).filter(function (g) { return g.rows.length; });
   }
@@ -1435,7 +1450,14 @@
     if (!groups.length) return '<div class="gs-summary-empty">目前沒有任何有加成效果的卡片</div>';
     var body = groups.map(function (g) {
       var rows = g.rows.map(function (r) {
-        return '<tr><td class="stat-label">' + esc(r.label) + '</td>' +
+        // 標籤裡剛好只有一個「N%」數值片段時，換成加總後的合計數字顯示；如果一句話裡
+        // 本來就有兩個以上百分比(少見)，直接顯示其中一張卡的原文，只有右欄合計數字是對的，
+        // 避免用單一數字亂套進有多個百分比的句子、顯示出看起來合理但其實錯的文字。
+        var occurrences = (r.template.match(/§/g) || []).length;
+        var label = occurrences === 1
+          ? r.template.replace('§', '+' + r.pct.toFixed(0) + '%')
+          : r.sampleLabel;
+        return '<tr><td class="stat-label">' + esc(label) + '</td>' +
           '<td class="stat-pct">+' + r.pct.toFixed(0) + '%</td></tr>';
       }).join('');
       return '<tr class="stat-group-row"><td colspan="2">' + esc(g.category) + '</td></tr>' + rows;
