@@ -1788,7 +1788,7 @@
 
   function matchItem(it, q) {
     if (!q) return true;
-    var blob = norm(it.name) + ' ' + norm(it.uname) + ' ' + norm(it.series) + ' ' + norm(it.equip) + ' ' + norm((it.jobs || []).join(' ')) + ' ' + norm(it.id);
+    var blob = norm(it.name) + ' ' + norm(it.uname) + ' ' + norm(it.series) + ' ' + norm(it.equip) + ' ' + norm(it.id);
     if (blob.indexOf(q) !== -1) return true;
     for (var i = 0; i < it.variants.length; i++) {
       if (norm(textBlob(it.variants[i].desc)).indexOf(q) !== -1) return true;
@@ -1837,8 +1837,7 @@
 
   function renderItemCard(it) {
     var meta = [];
-    if (it.jobs && it.jobs.length) meta.push('職業: ' + esc(it.jobs.join('/')));
-    else if (it.equip) meta.push('裝備: ' + esc(it.equip));
+    if (it.equip) meta.push('裝備: ' + esc(it.equip));
     if (it.series) meta.push('系列: ' + esc(it.series));
     if (it.weight !== null && it.weight !== undefined) meta.push('重量: ' + it.weight);
     if (it.slot) meta.push('卡槽: ' + it.slot);
