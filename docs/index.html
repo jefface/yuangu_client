@@ -805,12 +805,15 @@
     return data && data.entries && data.entries[patchNotesState.idx];
   }
 
-  function patchRenderChips() {
+  // 使用者要求：版本更新的日期選擇改成下拉選單，不要用點的TAG——版本一多，一排TAG
+  // 點的方式會越排越長，下拉選單比較好找特定日期。跟裝備模擬/職業分析選職業用的
+  // 下拉選單共用同一份.gs-toolbar/select樣式，不用另外設計。
+  function patchRenderDateSelect() {
     var data = window.PATCH_NOTES_DATA;
-    var wrap = document.getElementById('patchNotesChips');
-    if (!wrap) return;
-    wrap.innerHTML = (data && data.entries || []).map(function (entry, i) {
-      return '<button class="gs-chip' + (i === patchNotesState.idx ? ' active' : '') + '" data-i="' + i + '">' + esc(entry.date) + '</button>';
+    var sel = document.getElementById('patchNotesDateSelect');
+    if (!sel) return;
+    sel.innerHTML = (data && data.entries || []).map(function (entry, i) {
+      return '<option value="' + i + '"' + (i === patchNotesState.idx ? ' selected' : '') + '>' + esc(entry.date) + '</option>';
     }).join('');
   }
 
@@ -841,18 +844,15 @@
   }
 
   function renderPatchNotes() {
-    return '<div class="gs-chip-row" id="patchNotesChips"></div>' +
+    return '<div class="gs-toolbar"><select id="patchNotesDateSelect"></select></div>' +
       '<div id="patchNotesBody"></div>';
   }
 
   function initPatchNotes() {
-    patchRenderChips();
+    patchRenderDateSelect();
     patchRenderBody();
-    document.getElementById('patchNotesChips').addEventListener('click', function (e) {
-      var btn = e.target.closest && e.target.closest('.gs-chip');
-      if (!btn) return;
-      patchNotesState.idx = +btn.dataset.i;
-      patchRenderChips();
+    document.getElementById('patchNotesDateSelect').addEventListener('change', function (e) {
+      patchNotesState.idx = +e.target.value;
       patchRenderBody();
     });
   }
