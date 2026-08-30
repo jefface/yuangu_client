@@ -457,6 +457,60 @@
   .skill-detail-table td.lv { color: var(--accent); white-space: nowrap; font-weight: 600; }
 
   .patch-notes-page { max-width: 1000px; margin: 0 auto; }
+  .commands-page { max-width: 900px; margin: 0 auto; }
+  .commands-heading { font-size: 1.15em; color: var(--accent); margin: 0 0 4px; }
+  .commands-list { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; }
+  .command-row {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+  }
+  .command-cmd {
+    font-family: var(--mono);
+    font-size: 0.95em;
+    color: var(--accent);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 3px 8px;
+    white-space: nowrap;
+  }
+  .command-desc { color: var(--text); flex: 1 1 auto; min-width: 160px; }
+  .command-action { display: flex; align-items: center; gap: 6px; margin-left: auto; }
+  .command-input {
+    font-family: var(--mono);
+    font-size: 0.85em;
+    padding: 3px 8px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg);
+    color: var(--text);
+    width: 140px;
+  }
+  .command-note {
+    flex-basis: 100%;
+    font-size: 0.82em;
+    color: var(--muted);
+    border-top: 1px dashed var(--border);
+    padding-top: 8px;
+    margin-top: 2px;
+  }
+  .beginner-guide-page { max-width: 900px; margin: 0 auto; }
+  .guide-sections { display: flex; flex-direction: column; gap: 14px; margin-top: 14px; }
+  .guide-section {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 18px;
+  }
+  .guide-section-title { margin: 0 0 8px; font-size: 1.02em; color: var(--accent); }
+  .guide-points { margin: 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 6px; }
+  .guide-points li { color: var(--text); line-height: 1.5; }
   .patch-entry {
     background: var(--panel);
     border: 1px solid var(--border);
@@ -686,6 +740,7 @@
   <h1>怨古仙境RO 資料庫</h1>
   <div class="tabs">
     <button class="tab-btn" data-tab="patchNotes">版本更新</button>
+    <button class="tab-btn" data-tab="beginnerGuide">新手查看</button>
     <button class="tab-btn active" data-tab="items">物品</button>
     <button class="tab-btn" data-tab="monsters">怪物</button>
     <button class="tab-btn" data-tab="cards">卡片</button>
@@ -695,6 +750,7 @@
     <button class="tab-btn" data-tab="jobAdjust">職業調整</button>
     <button class="tab-btn" data-tab="gearsim">裝備模擬</button>
     <button class="tab-btn" data-tab="jobAnalysis">職業分析</button>
+    <button class="tab-btn" data-tab="commands">指令</button>
   </div>
   <div class="controls">
     <input type="text" id="search" placeholder="搜尋名稱或描述...">
@@ -714,6 +770,8 @@
   <div class="formula-page" id="formulaPage" style="display:none"></div>
   <div class="gearsim-page" id="gearsimPage" style="display:none"></div>
   <div class="job-analysis-page" id="jobAnalysisPage" style="display:none"></div>
+  <div class="commands-page" id="commandsPage" style="display:none"></div>
+  <div class="beginner-guide-page" id="beginnerGuidePage" style="display:none"></div>
 </main>
 <div class="floating-stats" id="collectionStats"></div>
 <div class="hover-tip" id="hoverTip"></div>
@@ -728,6 +786,8 @@
 <script src="data/job_adjustments_data.js"></script>
 <script src="data/monsters_data.js"></script>
 <script src="data/patch_notes_data.js"></script>
+<script src="data/commands_data.js"></script>
+<script src="data/beginner_guide_data.js"></script>
 <script src="data/web_sim_data.js"></script>
 <script>
 (function () {
@@ -794,6 +854,66 @@
       patchNotesState.idx = +btn.dataset.i;
       patchRenderChips();
       patchRenderBody();
+    });
+  }
+
+  // ---------- 指令頁：使用者手動提供的常用指令參考清單，純靜態列表+複製按鈕，
+  // 不用篩選/搜尋，跟patchNotes同一種「自己的獨立頁面」模式，不走物品/卡片那套
+  // 通用TABS篩選格線。/organize比較特別，使用者要求可以先輸入隊名再複製，
+  // 複製結果是「/organize 隊名」，不是單純複製指令本身。----------
+  function renderCommands() {
+    var data = window.COMMANDS_DATA;
+    var list = (data && data.commands) || [];
+    var rows = list.map(function (c, i) {
+      var noteHtml = c.note ? '<div class="command-note">' + esc(c.note) + '</div>' : '';
+      var actionHtml = c.hasInput
+        ? '<input type="text" class="command-input" id="cmdInput' + i + '" placeholder="' + esc(c.inputPlaceholder || '') + '">' +
+          '<button type="button" class="copy-btn command-copy-input" data-cmd="' + esc(c.cmd) + '" data-input-id="cmdInput' + i + '" data-copy-label="已複製">複製</button>'
+        : '<button type="button" class="copy-btn" data-copy-value="' + esc(c.cmd) + '" data-copy-label="已複製">複製</button>';
+      return '<div class="command-row">' +
+        '<code class="command-cmd">' + esc(c.cmd) + '</code>' +
+        '<span class="command-desc">' + esc(c.desc) + '</span>' +
+        '<span class="command-action">' + actionHtml + '</span>' +
+        noteHtml +
+      '</div>';
+    }).join('');
+    return '<h2 class="commands-heading">常用指令</h2>' +
+      '<p class="gs-footnote">按「複製」直接複製到剪貼簿，貼到遊戲聊天欄送出就能用。</p>' +
+      '<div class="commands-list">' + (rows || '<div class="patch-empty">目前沒有收錄的指令。</div>') + '</div>';
+  }
+
+  // ---------- 新手查看：使用者手動提供的新手常見問題整理，純靜態文字，
+  // 跟指令頁同一種「自己的獨立頁面」模式，資料分section+points方便之後繼續加。----------
+  function renderBeginnerGuide() {
+    var data = window.BEGINNER_GUIDE_DATA;
+    var sections = (data && data.sections) || [];
+    var body = sections.map(function (s) {
+      var points = (s.points || []).map(function (p) {
+        return '<li>' + esc(p) + '</li>';
+      }).join('');
+      return '<div class="guide-section">' +
+        '<h3 class="guide-section-title">' + esc(s.title) + '</h3>' +
+        '<ul class="guide-points">' + points + '</ul>' +
+      '</div>';
+    }).join('');
+    return '<h2 class="commands-heading">新手查看</h2>' +
+      '<div class="guide-sections">' + (body || '<div class="patch-empty">目前沒有收錄的內容。</div>') + '</div>';
+  }
+
+  function initCommands() {
+    document.getElementById('commandsPage').addEventListener('click', function (e) {
+      var inputCopyBtn = e.target.closest && e.target.closest('.command-copy-input');
+      if (inputCopyBtn) {
+        var input = document.getElementById(inputCopyBtn.dataset.inputId);
+        var name = (input && input.value || '').trim();
+        inputCopyBtn.dataset.copyValue = name ? (inputCopyBtn.dataset.cmd + ' ' + name) : inputCopyBtn.dataset.cmd;
+        handleCopyBtnClick(inputCopyBtn);
+        return;
+      }
+      var copyBtn = e.target.closest && e.target.closest('.copy-btn');
+      if (copyBtn) {
+        handleCopyBtnClick(copyBtn);
+      }
     });
   }
 
@@ -1373,6 +1493,25 @@
     return s.toString().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
+  // ---------- 共用的「複製到剪貼簿」按鈕邏輯：怪物頁的複製ID/複製名稱、指令頁的
+  // 複製指令都共用這一份，不要每個頁籤各自重寫一次剪貼簿存取+還原按鈕文字的邏輯。
+  // 按鈕文字要顯示什麼「已複製」提示，用data-copy-label指定（沒指定就統一顯示「已複製」），
+  // 不要用按鈕原文猜（原本猜「文字裡有沒有ID」，指令頁的按鈕不會有這個字樣，會猜錯）。
+  function handleCopyBtnClick(btn) {
+    var val = btn.dataset.copyValue;
+    var restoreText = btn.textContent;
+    var doneText = btn.dataset.copyLabel || '已複製';
+    var afterCopy = function () {
+      btn.textContent = doneText;
+      setTimeout(function () { btn.textContent = restoreText; }, 1200);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(val).then(afterCopy, afterCopy);
+    } else {
+      afterCopy();
+    }
+  }
+
   // ---------- 自訂滑鼠浮框（取代原生title的黃色系統提示框） ----------
   function positionHoverTip(e) {
     var el = document.getElementById('hoverTip');
@@ -1817,8 +1956,8 @@
       '</div>' +
       '<div class="monster-id-row">' +
         '<span class="monster-id-text">#' + m.id + '</span>' +
-        '<button type="button" class="copy-btn" data-copy-value="' + m.id + '">複製ID</button>' +
-        '<button type="button" class="copy-btn" data-copy-value="' + esc(m.name) + '">複製名稱</button>' +
+        '<button type="button" class="copy-btn" data-copy-value="' + m.id + '" data-copy-label="ID已複製">複製ID</button>' +
+        '<button type="button" class="copy-btn" data-copy-value="' + esc(m.name) + '" data-copy-label="名稱已複製">複製名稱</button>' +
       '</div>' +
     '</div>';
   }
@@ -2141,16 +2280,25 @@
       '<div class="floating-stats-body">' + bodyHtml + '</div>';
   }
 
+  // 使用者實測發現過的bug：某個「自己獨立一頁」的頁籤（例如formula）忘記隱藏另一個
+  // 獨立頁籤（gearsim）,切換頁籤時兩頁會疊在一起顯示。原本render()裡每個分支都各自
+  // 手動列出「隱藏其餘N個獨立頁面」，每新增一個獨立頁籤就要回頭改所有舊分支、很容易漏改
+  // （這正是bug發生的原因）——改成集中維護一份清單，新增獨立頁籤只要加進這個陣列，
+  // 不用去改其他分支的程式碼。
+  var CUSTOM_PAGE_IDS = ['patchNotesPage', 'formulaPage', 'gearsimPage', 'jobAnalysisPage', 'commandsPage', 'beginnerGuidePage'];
+  function showCustomPage(pageId) {
+    document.getElementById('list').style.display = 'none';
+    document.getElementById('pager').innerHTML = '';
+    document.getElementById('count').textContent = '';
+    CUSTOM_PAGE_IDS.forEach(function (id) {
+      document.getElementById(id).style.display = (id === pageId) ? '' : 'none';
+    });
+    return document.getElementById(pageId);
+  }
+
   function render() {
     if (state.tab === 'patchNotes') {
-      document.getElementById('list').style.display = 'none';
-      document.getElementById('pager').innerHTML = '';
-      document.getElementById('count').textContent = '';
-      document.getElementById('formulaPage').style.display = 'none';
-      document.getElementById('gearsimPage').style.display = 'none';
-      document.getElementById('jobAnalysisPage').style.display = 'none';
-      var pnp = document.getElementById('patchNotesPage');
-      pnp.style.display = '';
+      var pnp = showCustomPage('patchNotesPage');
       if (!pnp.dataset.rendered) {
         pnp.innerHTML = renderPatchNotes();
         pnp.dataset.rendered = '1';
@@ -2159,17 +2307,7 @@
       return;
     }
     if (state.tab === 'formula') {
-      document.getElementById('list').style.display = 'none';
-      document.getElementById('pager').innerHTML = '';
-      document.getElementById('count').textContent = '';
-      // 原本只顯示自己的formulaPage，沒隱藏另外三個獨立頁面——使用者實測發現先點裝備模擬
-      // 再點公式，裝備模擬的內容還留著疊在下面，這裡補上跟gearsim/jobAnalysis/patchNotes
-      // 分支一樣的隱藏動作。
-      document.getElementById('gearsimPage').style.display = 'none';
-      document.getElementById('jobAnalysisPage').style.display = 'none';
-      document.getElementById('patchNotesPage').style.display = 'none';
-      var fp = document.getElementById('formulaPage');
-      fp.style.display = '';
+      var fp = showCustomPage('formulaPage');
       if (!fp.dataset.rendered) {
         fp.innerHTML = FORMULA_HTML;
         fp.dataset.rendered = '1';
@@ -2189,14 +2327,7 @@
       return;
     }
     if (state.tab === 'gearsim') {
-      document.getElementById('list').style.display = 'none';
-      document.getElementById('pager').innerHTML = '';
-      document.getElementById('count').textContent = '';
-      document.getElementById('formulaPage').style.display = 'none';
-      document.getElementById('jobAnalysisPage').style.display = 'none';
-      document.getElementById('patchNotesPage').style.display = 'none';
-      var gp = document.getElementById('gearsimPage');
-      gp.style.display = '';
+      var gp = showCustomPage('gearsimPage');
       if (!gp.dataset.rendered) {
         gp.innerHTML = GEARSIM_HTML;
         gp.dataset.rendered = '1';
@@ -2205,14 +2336,7 @@
       return;
     }
     if (state.tab === 'jobAnalysis') {
-      document.getElementById('list').style.display = 'none';
-      document.getElementById('pager').innerHTML = '';
-      document.getElementById('count').textContent = '';
-      document.getElementById('formulaPage').style.display = 'none';
-      document.getElementById('gearsimPage').style.display = 'none';
-      document.getElementById('patchNotesPage').style.display = 'none';
-      var jp = document.getElementById('jobAnalysisPage');
-      jp.style.display = '';
+      var jp = showCustomPage('jobAnalysisPage');
       if (!jp.dataset.rendered) {
         jp.innerHTML = JOB_ANALYSIS_HTML;
         jp.dataset.rendered = '1';
@@ -2220,11 +2344,25 @@
       }
       return;
     }
+    if (state.tab === 'commands') {
+      var cp = showCustomPage('commandsPage');
+      if (!cp.dataset.rendered) {
+        cp.innerHTML = renderCommands();
+        cp.dataset.rendered = '1';
+        initCommands();
+      }
+      return;
+    }
+    if (state.tab === 'beginnerGuide') {
+      var bgp = showCustomPage('beginnerGuidePage');
+      if (!bgp.dataset.rendered) {
+        bgp.innerHTML = renderBeginnerGuide();
+        bgp.dataset.rendered = '1';
+      }
+      return;
+    }
     document.getElementById('list').style.display = '';
-    document.getElementById('formulaPage').style.display = 'none';
-    document.getElementById('gearsimPage').style.display = 'none';
-    document.getElementById('jobAnalysisPage').style.display = 'none';
-    document.getElementById('patchNotesPage').style.display = 'none';
+    CUSTOM_PAGE_IDS.forEach(function (id) { document.getElementById(id).style.display = 'none'; });
 
     if (state.tab === 'jobs' && state.chainDetail !== null) {
       renderChainDetailView();
@@ -2383,7 +2521,7 @@
     });
     document.getElementById('exportBtn').style.display = tab === 'collection' ? '' : 'none';
     document.getElementById('importBtn').style.display = tab === 'collection' ? '' : 'none';
-    var isFormula = tab === 'formula' || tab === 'gearsim' || tab === 'jobAnalysis' || tab === 'patchNotes';
+    var isFormula = tab === 'formula' || tab === 'gearsim' || tab === 'jobAnalysis' || tab === 'patchNotes' || tab === 'commands' || tab === 'beginnerGuide';
     document.querySelector('.controls').style.display = isFormula ? 'none' : '';
     document.getElementById('advanced').style.display = isFormula ? 'none' : '';
     if (!isFormula) buildAdvancedPanel();
@@ -2440,18 +2578,7 @@
     // 變成複製完還跳去開詳細頁
     var copyBtn = e.target.closest && e.target.closest('.copy-btn');
     if (copyBtn) {
-      var val = copyBtn.dataset.copyValue;
-      var restoreText = copyBtn.textContent;
-      var doneText = restoreText.indexOf('ID') !== -1 ? 'ID已複製' : '名稱已複製';
-      var afterCopy = function () {
-        copyBtn.textContent = doneText;
-        setTimeout(function () { copyBtn.textContent = restoreText; }, 1200);
-      };
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(val).then(afterCopy, afterCopy);
-      } else {
-        afterCopy();
-      }
+      handleCopyBtnClick(copyBtn);
       return;
     }
     var mcard = e.target.closest && e.target.closest('.monster-card');
