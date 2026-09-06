@@ -957,13 +957,13 @@
     '<div class="formula-section">',
     '<h2>物理傷害公式</h2>',
 
-    '<h3>基礎公式 <span class="formula-tag verified">已驗證</span></h3>',
-    '<div class="formula-code">有效攻擊 = 全段ATK − DEF\n傷害 = 有效攻擊 × Π(1 + 各乘區%)</div>',
-    '<p class="formula-note">DEF直接從攻擊力線性扣減（硬防），這部分經過實測確認。',
+    '<h3>基礎公式 <span class="formula-tag verified">已驗證・GM認可</span></h3>',
+    '<div class="formula-code">最終傷害 = ( 全段ATK − DEF ) × (1+遠距增傷%) × (1+非暴擊增傷%) × (1+終傷%)\n\n全段ATK = 前段總ATK + 後段總ATK　（純加總，不含任何%乘區）</div>',
+    '<p class="formula-note">DEF（硬防）先從全段ATK線性扣掉，<b>扣完 DEF 之後</b>才乘上各增傷乘區——不是先乘再扣。上式列的遠距／非暴擊／終傷是最常見的組合，其餘乘區（近距離／體型／種族／屬性／暴擊…）擇當下適用者一起連乘。此結構經 GM 認可。',
     '至於RES是否也對物理生效、以及是否走下面的軟防曲線，還沒有測試資料，先當開放問題。</p>',
 
     '<h3>全段ATK怎麼組成 <span class="formula-tag inferred">官方RO Renewal公版知識，未核對你貼過的原文</span></h3>',
-    '<div class="formula-code">全段ATK = (前段總ATK + 後段總ATK) × (1+遠距增傷%) × (1+暴擊增傷%) × 其他倍率</div>',
+    '<div class="formula-code">全段ATK = 前段總ATK + 後段總ATK　（純加總；各%增傷乘區一律在扣 DEF 之後才乘，不在這裡）</div>',
 
     '<h4 style="margin:10px 0 4px">前段總ATK</h4>',
     '<div class="formula-code">前段總ATK = StatusATK + WeaponATK\n\nStatusATK = STR + floor(STR / 10)² + floor(DEX / 5) + floor(LUK / 5)\n（弓類/槍械武器：公式裡STR、DEX的角色互換，改成以DEX為主）\n\nWeaponATK = 武器本身面板ATK + 精煉加成（依武器等級1~5查精煉表，是每一級固定加值，\n            不是百分比，例如武器等級1、+15時是+30、+20時是+60，跳點不是線性的）</div>',
@@ -986,8 +986,8 @@
 
     '<h3>完整結構（含軟防曲線） <span class="formula-tag inferred">推論</span></h3>',
     '<div class="formula-code">硬防 = DEF（直接扣減的固定值）\n軟防 = RES × 3\n軟防減傷比例 = (4000 + 軟防) / (4000 + 10 × 軟防)\n\n傷害 = 全段ATK × 技能倍率% × (1+技能增傷%) × 軟防減傷比例 − 硬防</div>',
-    '<p class="formula-note">這是跟官方RO現行版（Renewal）公式結構比對後最合理的完整寫法，硬防那一段已驗證，',
-    '軟防曲線那一段還沒有實測資料，先當工作假設使用。</p>',
+    '<p class="formula-note">這是跟官方RO現行版（Renewal）公式結構比對後的完整寫法，軟防曲線那一段還沒有實測資料，先當工作假設。',
+    '⚠️ 這格把乘區乘在扣硬防「之前」，跟上面「已驗證・GM認可」的基礎式（先扣 DEF 再乘增傷）順序相反——乘區與 DEF 的先後一律以 GM 認可基礎式為準，這格僅供軟防／技能倍率的結構參考。</p>',
 
     '<h3>破防（無視防禦）</h3>',
     '<ul class="formula-note">',
