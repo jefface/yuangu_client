@@ -2342,25 +2342,28 @@
       elems.map(function (t) { return '<button class="mm-tag" data-elem="' + t + '">' + t + '</button>'; })
     ).join('');
     return '<div class="mm-head"><h2>地圖怪物</h2>' +
-      '<p class="formula-note">依怪物種類數由多到少排序。點屬性標籤→分析該屬性：可切「依數量(該屬性種類數)」或「依分布率(該屬性占該圖比例)」排序，展開時把該屬性怪標亮。部分自訂／副本／MVP 怪尚無常駐出沒資料，故未列。</p>' +
+      '<p class="formula-note">預設依怪物「數量(隻數)」由多到少排序。點屬性標籤可只看該屬性，並可切「依隻數／依種類數／依分布率」。展開屬性時把該屬性怪標亮。部分自訂／副本／MVP 怪尚無常駐出沒資料，故未列。</p>' +
       '<div class="mm-tags">' + tagBar + '</div>' +
-      '<div class="mm-sort" id="mmSort" style="display:none">排序：' +
-      '<button class="mm-sbtn on" data-sort="count">依數量</button>' +
-      '<button class="mm-sbtn" data-sort="ratio">依分布率</button></div>' +
+      '<div class="mm-sort" id="mmSort">排序：' +
+      '<button class="mm-sbtn on" data-sort="qty">依隻數</button>' +
+      '<button class="mm-sbtn" data-sort="species">依種類數</button>' +
+      '<button class="mm-sbtn mm-sbtn-ratio" data-sort="ratio" style="display:none">依分布率</button></div>' +
       '<input type="text" id="mmSearch" class="mm-search" placeholder="搜尋地圖名稱或代碼…"></div>' +
       '<div id="mmList"></div>';
   }
   function mmBuildList(elem, q, sort) {
     var maps = ((window.MAP_MONSTERS_DATA && window.MAP_MONSTERS_DATA.maps) || []).slice();
+    var keyFn;
     if (elem) {
       maps = maps.filter(function (m) { return (m.elementCounts || {})[elem]; });
-      maps.sort(function (a, b) {
-        if (sort === 'ratio') {  // 分布率 = 該屬性種類數 / 該圖總種類數
-          return (b.elementCounts[elem] / b.speciesCount) - (a.elementCounts[elem] / a.speciesCount);
-        }
-        return (b.elementCounts[elem] || 0) - (a.elementCounts[elem] || 0);  // 依數量(種類數)
-      });
-    } // 全部：沿用資料本身的「本服種類數」排序
+      if (sort === 'species') keyFn = function (m) { return m.elementCounts[elem] || 0; };
+      else if (sort === 'ratio') keyFn = function (m) { return m.elementCounts[elem] / m.speciesCount; };
+      else keyFn = function (m) { return (m.elementQuantity || {})[elem] || 0; };  // 依隻數
+    } else {
+      if (sort === 'species') keyFn = function (m) { return m.serverSpeciesCount; };
+      else keyFn = function (m) { return m.totalQuantity || 0; };  // 依隻數(預設)
+    }
+    maps.sort(function (a, b) { return keyFn(b) - keyFn(a); });
     q = (q || '').trim().toLowerCase();
     var html = maps.filter(function (m) {
       return !q || ((m.mapName || '') + ' ' + m.mapCode).toLowerCase().indexOf(q) >= 0;
@@ -2373,11 +2376,11 @@
       }).join('');
       var cnt;
       if (elem) {
-        var n = m.elementCounts[elem];
-        var p = m.speciesCount ? Math.round(n / m.speciesCount * 100) : 0;
-        cnt = '「' + elem + '」' + n + ' 種・分布率 ' + p + '%（' + n + '/' + m.speciesCount + '）';
+        var sp = m.elementCounts[elem], qy = (m.elementQuantity || {})[elem] || 0;
+        var p = m.speciesCount ? Math.round(sp / m.speciesCount * 100) : 0;
+        cnt = '「' + elem + '」' + qy + ' 隻・' + sp + ' 種・分布率 ' + p + '%';
       } else {
-        cnt = m.serverSpeciesCount + ' 種';
+        cnt = '共 ' + (m.totalQuantity || 0) + ' 隻・' + m.serverSpeciesCount + ' 種';
       }
       var codeTag = m.mapName ? ' <span class="mm-code">' + esc(m.mapCode) + '</span>' : '';
       return '<details class="mm-map"><summary><span class="mm-rank">#' + (i + 1) + '</span>' +
@@ -2389,10 +2392,14 @@
   function initMapMonsters() {
     var page = document.getElementById('mapMonstersPage');
     var listEl = document.getElementById('mmList');
-    var sortBox = document.getElementById('mmSort');
-    var cur = { elem: '', q: '', sort: 'count' };
+    var ratioBtn = page.querySelector('.mm-sbtn-ratio');
+    var cur = { elem: '', q: '', sort: 'qty' };
+    function setSortActive() {
+      Array.prototype.forEach.call(page.querySelectorAll('.mm-sbtn'), function (b) { b.classList.toggle('on', b.dataset.sort === cur.sort); });
+    }
     function refresh() {
-      sortBox.style.display = cur.elem ? '' : 'none';  // 排序切換只在選了屬性時出現
+      if (ratioBtn) ratioBtn.style.display = cur.elem ? '' : 'none';   // 分布率只在選屬性時可用
+      if (!cur.elem && cur.sort === 'ratio') { cur.sort = 'qty'; setSortActive(); }  // 回全部→分布率失效，改回隻數
       listEl.innerHTML = mmBuildList(cur.elem, cur.q, cur.sort);
     }
     refresh();
@@ -2408,7 +2415,7 @@
     Array.prototype.forEach.call(page.querySelectorAll('.mm-sbtn'), function (btn) {
       btn.addEventListener('click', function () {
         cur.sort = btn.dataset.sort;
-        Array.prototype.forEach.call(page.querySelectorAll('.mm-sbtn'), function (b) { b.classList.toggle('on', b === btn); });
+        setSortActive();
         refresh();
       });
     });
