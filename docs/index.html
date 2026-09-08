@@ -750,6 +750,7 @@
     <button class="tab-btn" data-tab="beginnerGuide">新手查看</button>
     <button class="tab-btn active" data-tab="items">物品</button>
     <button class="tab-btn" data-tab="monsters">怪物</button>
+    <button class="tab-btn" data-tab="mapMonsters">地圖</button>
     <button class="tab-btn" data-tab="cards">卡片</button>
     <button class="tab-btn" data-tab="jobs">職業</button>
     <button class="tab-btn" data-tab="collection">收藏</button>
@@ -779,6 +780,27 @@
   <div class="job-analysis-page" id="jobAnalysisPage" style="display:none"></div>
   <div class="commands-page" id="commandsPage" style="display:none"></div>
   <div class="beginner-guide-page" id="beginnerGuidePage" style="display:none"></div>
+  <style>
+  .mm-head h2 { margin: 0 0 4px; }
+  .mm-search { width: 100%; max-width: 360px; padding: 6px 10px; margin: 8px 0 12px; border: 1px solid var(--border, #ccc); border-radius: 6px; font-size: 14px; background: var(--bg, #fff); color: inherit; }
+  .mm-map { border: 1px solid var(--border, #ddd); border-radius: 6px; margin: 4px 0; padding: 2px 8px; }
+  .mm-map summary { cursor: pointer; padding: 6px 2px; list-style-position: inside; }
+  .mm-rank { color: var(--muted, #888); font-size: .85em; margin-right: 4px; }
+  .mm-code { color: var(--muted, #888); font-size: .8em; }
+  .mm-cnt { color: var(--accent, #c60); font-size: .85em; margin-left: 6px; }
+  .mm-mobs { display: flex; flex-wrap: wrap; gap: 4px; padding: 4px 0 10px; }
+  .mm-mob { background: var(--sheet-bg, #eef); border-radius: 10px; padding: 2px 8px; font-size: .85em; }
+  .mm-boss { background: #fdd; color: #a00; font-weight: 600; }
+  .mm-hi { outline: 2px solid var(--accent, #c60); }
+  .mm-el { color: var(--muted, #888); font-size: .82em; margin: 0 2px; }
+  .mm-tags { display: flex; flex-wrap: wrap; gap: 4px; margin: 8px 0 4px; }
+  .mm-tag { padding: 3px 10px; border: 1px solid var(--border, #ccc); border-radius: 14px; background: var(--bg, #fff); color: inherit; cursor: pointer; font-size: .85em; }
+  .mm-tag.on { background: var(--accent, #c60); color: #fff; border-color: var(--accent, #c60); }
+  .mm-sort { margin: 6px 0; font-size: .85em; color: var(--muted, #888); }
+  .mm-sbtn { padding: 2px 10px; margin-left: 4px; border: 1px solid var(--border, #ccc); border-radius: 12px; background: var(--bg, #fff); color: inherit; cursor: pointer; font-size: .95em; }
+  .mm-sbtn.on { background: var(--accent, #c60); color: #fff; border-color: var(--accent, #c60); }
+  </style>
+  <div class="formula-page" id="mapMonstersPage" style="display:none"></div>
 </main>
 <div class="floating-stats" id="collectionStats"></div>
 <div class="hover-tip" id="hoverTip"></div>
@@ -792,6 +814,7 @@
 <script src="data/equipment_sets_data.js"></script>
 <script src="data/job_adjustments_data.js"></script>
 <script src="data/monsters_data.js"></script>
+<script src="data/map_monsters_data.js"></script>
 <script src="data/patch_notes_data.js"></script>
 <script src="data/commands_data.js"></script>
 <script src="data/beginner_guide_data.js"></script>
@@ -1433,6 +1456,14 @@
   var CARD_SETS = [];
   var CARD_SETS_BY_KEY = {};
   var NAME_BY_STATE_KEY = {};
+  // 推文專家證明 I/II/III（特殊收藏#33/34/35）三筆都是同一個物品(id 80199)，但遊戲裡是各自
+  // 獨立完成的收藏，所以只有這幾筆的勾選狀態改成「按收藏筆(entry.key)」存，勾一個不會連動其他兩筆。
+  // 其餘收藏維持「按物品id」共用（同一張卡算進多個主題本來就該一起亮）。
+  var INDEP_ENTRY_KEYS = { '特殊收藏::33': 1, '特殊收藏::34': 1, '特殊收藏::35': 1 };
+  function ownKey(entry, cardId) {
+    var base = stateKey(entry.kind, cardId);
+    return INDEP_ENTRY_KEYS[entry.key] ? base + '::' + entry.key : base;
+  }
   (function () {
     // 卡片收藏(card_sets)、裝備收藏(equipment_sets)兩份資料格式刻意一致，直接合併進同一份清單，
     // 只靠entry.kind（'card'/'equipment'）決定localStorage key前綴，避免卡片ID跟裝備ID萬一撞號互相干擾
@@ -1444,7 +1475,7 @@
           entry._ord = CARD_SETS.length;
           CARD_SETS.push(entry);
           CARD_SETS_BY_KEY[entry.key] = entry;
-          entry.cards.forEach(function (c) { NAME_BY_STATE_KEY[stateKey(entry.kind, c.id)] = c.name; });
+          entry.cards.forEach(function (c) { NAME_BY_STATE_KEY[ownKey(entry, c.id)] = c.name; });
         });
       });
     });
@@ -1468,11 +1499,11 @@
       // localStorage 不可用（例如無痕視窗封鎖）就放棄記憶，不影響當前畫面顯示
     }
   }
-  function isCardOwned(kind, cardId, state) {
-    return !!state[stateKey(kind, cardId)];
+  function isCardOwned(entry, cardId, state) {
+    return !!state[ownKey(entry, cardId)];
   }
   function isSetCollected(entry, state) {
-    return entry.cards.length > 0 && entry.cards.every(function (c) { return isCardOwned(entry.kind, c.id, state); });
+    return entry.cards.length > 0 && entry.cards.every(function (c) { return isCardOwned(entry, c.id, state); });
   }
 
   // 墮影之心/企鵝寵物蛋這類tierGroup套裝，遊戲規則是「同組只有擁有中最高階生效，
@@ -1918,9 +1949,9 @@
     var superseded = isTierSuperseded(entry, state);
 
     var cardsHtml = entry.cards.map(function (c) {
-      var owned = isCardOwned(entry.kind, c.id, state);
+      var owned = isCardOwned(entry, c.id, state);
       return '<label class="set-card-line">' +
-        '<input type="checkbox" class="card-check-input" data-card-id="' + c.id + '" data-kind="' + entry.kind + '"' + (owned ? ' checked' : '') + '>' +
+        '<input type="checkbox" class="card-check-input" data-card-id="' + c.id + '" data-kind="' + entry.kind + '" data-set-key="' + esc(entry.key) + '"' + (owned ? ' checked' : '') + '>' +
         ' ' + esc(c.name) + ' #' + c.id + ' [x' + c.need + ']' +
       '</label>';
     }).join('');
@@ -2297,7 +2328,92 @@
   // 手動列出「隱藏其餘N個獨立頁面」，每新增一個獨立頁籤就要回頭改所有舊分支、很容易漏改
   // （這正是bug發生的原因）——改成集中維護一份清單，新增獨立頁籤只要加進這個陣列，
   // 不用去改其他分支的程式碼。
-  var CUSTOM_PAGE_IDS = ['patchNotesPage', 'formulaPage', 'gearsimPage', 'jobAnalysisPage', 'commandsPage', 'beginnerGuidePage'];
+  var CUSTOM_PAGE_IDS = ['patchNotesPage', 'formulaPage', 'gearsimPage', 'jobAnalysisPage', 'commandsPage', 'beginnerGuidePage', 'mapMonstersPage'];
+
+  // ---------- 地圖頁：每張地圖有哪些怪（map_monsters.json）。可依「全部種類數」或某屬性種類數排序 ----------
+  // 屬性標籤只列「實際有地圖資料的屬性」（例如念屬性怪目前都沒有出沒資料，就不會出現念標籤）
+  var MM_ELEM_ORDER = ['無', '水', '地', '火', '風', '毒', '聖', '暗', '念', '不死'];
+  function renderMapMonsters() {
+    var maps = (window.MAP_MONSTERS_DATA && window.MAP_MONSTERS_DATA.maps) || [];
+    var present = {};
+    maps.forEach(function (m) { Object.keys(m.elementCounts || {}).forEach(function (e) { present[e] = 1; }); });
+    var elems = MM_ELEM_ORDER.filter(function (e) { return present[e]; });
+    var tagBar = ['<button class="mm-tag on" data-elem="">全部</button>'].concat(
+      elems.map(function (t) { return '<button class="mm-tag" data-elem="' + t + '">' + t + '</button>'; })
+    ).join('');
+    return '<div class="mm-head"><h2>地圖怪物</h2>' +
+      '<p class="formula-note">依怪物種類數由多到少排序。點屬性標籤→分析該屬性：可切「依數量(該屬性種類數)」或「依分布率(該屬性占該圖比例)」排序，展開時把該屬性怪標亮。部分自訂／副本／MVP 怪尚無常駐出沒資料，故未列。</p>' +
+      '<div class="mm-tags">' + tagBar + '</div>' +
+      '<div class="mm-sort" id="mmSort" style="display:none">排序：' +
+      '<button class="mm-sbtn on" data-sort="count">依數量</button>' +
+      '<button class="mm-sbtn" data-sort="ratio">依分布率</button></div>' +
+      '<input type="text" id="mmSearch" class="mm-search" placeholder="搜尋地圖名稱或代碼…"></div>' +
+      '<div id="mmList"></div>';
+  }
+  function mmBuildList(elem, q, sort) {
+    var maps = ((window.MAP_MONSTERS_DATA && window.MAP_MONSTERS_DATA.maps) || []).slice();
+    if (elem) {
+      maps = maps.filter(function (m) { return (m.elementCounts || {})[elem]; });
+      maps.sort(function (a, b) {
+        if (sort === 'ratio') {  // 分布率 = 該屬性種類數 / 該圖總種類數
+          return (b.elementCounts[elem] / b.speciesCount) - (a.elementCounts[elem] / a.speciesCount);
+        }
+        return (b.elementCounts[elem] || 0) - (a.elementCounts[elem] || 0);  // 依數量(種類數)
+      });
+    } // 全部：沿用資料本身的「本服種類數」排序
+    q = (q || '').trim().toLowerCase();
+    var html = maps.filter(function (m) {
+      return !q || ((m.mapName || '') + ' ' + m.mapCode).toLowerCase().indexOf(q) >= 0;
+    }).map(function (m, i) {
+      var mobs = (m.monsters || []).map(function (x) {
+        var hi = (elem && x.element === elem) ? ' mm-hi' : '';
+        return '<span class="mm-mob' + (x.boss ? ' mm-boss' : '') + hi + '">' + esc(x.name) +
+          (x.element ? '<span class="mm-el">' + esc(x.element) + '</span>' : '') +
+          (x.count ? ' ×' + x.count : '') + '</span>';
+      }).join('');
+      var cnt;
+      if (elem) {
+        var n = m.elementCounts[elem];
+        var p = m.speciesCount ? Math.round(n / m.speciesCount * 100) : 0;
+        cnt = '「' + elem + '」' + n + ' 種・分布率 ' + p + '%（' + n + '/' + m.speciesCount + '）';
+      } else {
+        cnt = m.serverSpeciesCount + ' 種';
+      }
+      var codeTag = m.mapName ? ' <span class="mm-code">' + esc(m.mapCode) + '</span>' : '';
+      return '<details class="mm-map"><summary><span class="mm-rank">#' + (i + 1) + '</span>' +
+        esc(m.mapName || m.mapCode) + codeTag + '<span class="mm-cnt">' + cnt + '</span></summary>' +
+        '<div class="mm-mobs">' + mobs + '</div></details>';
+    }).join('');
+    return html || '<div class="patch-empty">沒有符合的地圖。</div>';
+  }
+  function initMapMonsters() {
+    var page = document.getElementById('mapMonstersPage');
+    var listEl = document.getElementById('mmList');
+    var sortBox = document.getElementById('mmSort');
+    var cur = { elem: '', q: '', sort: 'count' };
+    function refresh() {
+      sortBox.style.display = cur.elem ? '' : 'none';  // 排序切換只在選了屬性時出現
+      listEl.innerHTML = mmBuildList(cur.elem, cur.q, cur.sort);
+    }
+    refresh();
+    var inp = document.getElementById('mmSearch');
+    if (inp) inp.addEventListener('input', function () { cur.q = this.value; refresh(); });
+    Array.prototype.forEach.call(page.querySelectorAll('.mm-tag'), function (btn) {
+      btn.addEventListener('click', function () {
+        cur.elem = btn.dataset.elem;
+        Array.prototype.forEach.call(page.querySelectorAll('.mm-tag'), function (b) { b.classList.toggle('on', b === btn); });
+        refresh();
+      });
+    });
+    Array.prototype.forEach.call(page.querySelectorAll('.mm-sbtn'), function (btn) {
+      btn.addEventListener('click', function () {
+        cur.sort = btn.dataset.sort;
+        Array.prototype.forEach.call(page.querySelectorAll('.mm-sbtn'), function (b) { b.classList.toggle('on', b === btn); });
+        refresh();
+      });
+    });
+  }
+
   function showCustomPage(pageId) {
     document.getElementById('list').style.display = 'none';
     document.getElementById('pager').innerHTML = '';
@@ -2370,6 +2486,15 @@
       if (!bgp.dataset.rendered) {
         bgp.innerHTML = renderBeginnerGuide();
         bgp.dataset.rendered = '1';
+      }
+      return;
+    }
+    if (state.tab === 'mapMonsters') {
+      var mmp = showCustomPage('mapMonstersPage');
+      if (!mmp.dataset.rendered) {
+        mmp.innerHTML = renderMapMonsters();
+        mmp.dataset.rendered = '1';
+        initMapMonsters();
       }
       return;
     }
@@ -2533,7 +2658,7 @@
     });
     document.getElementById('exportBtn').style.display = tab === 'collection' ? '' : 'none';
     document.getElementById('importBtn').style.display = tab === 'collection' ? '' : 'none';
-    var isFormula = tab === 'formula' || tab === 'gearsim' || tab === 'jobAnalysis' || tab === 'patchNotes' || tab === 'commands' || tab === 'beginnerGuide';
+    var isFormula = tab === 'formula' || tab === 'gearsim' || tab === 'jobAnalysis' || tab === 'patchNotes' || tab === 'commands' || tab === 'beginnerGuide' || tab === 'mapMonsters';
     document.querySelector('.controls').style.display = isFormula ? 'none' : '';
     document.getElementById('advanced').style.display = isFormula ? 'none' : '';
     if (!isFormula) buildAdvancedPanel();
@@ -2609,15 +2734,17 @@
       if (!entry) return;
       var state1 = loadCollectionState();
       // 一次把整組套裝的卡片/裝備勾滿/取消，跟逐張手動勾的效果一樣（同一項在別組套裝裡的狀態也會連動）
-      entry.cards.forEach(function (c) { state1[stateKey(entry.kind, c.id)] = setBox.checked; });
+      entry.cards.forEach(function (c) { state1[ownKey(entry, c.id)] = setBox.checked; });
       saveCollectionState(state1);
       render();
       return;
     }
     var box = e.target.closest && e.target.closest('.card-check-input');
     if (!box) return;
+    var boxEntry = CARD_SETS_BY_KEY[box.dataset.setKey];
+    if (!boxEntry) return;
     var state2 = loadCollectionState();
-    state2[stateKey(box.dataset.kind, box.dataset.cardId)] = box.checked;
+    state2[ownKey(boxEntry, box.dataset.cardId)] = box.checked;
     saveCollectionState(state2);
     // 同一張卡可能出現在好幾組套裝裡，勾一次要讓所有相關套裝的完成狀態一起更新，直接整頁重繪最保險
     render();
