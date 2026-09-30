@@ -628,8 +628,8 @@
   .formula-view { display: none; }
   .formula-view.active { display: block; }
 
-  /* ---- 裝備模擬 / 職業分析 ---- */
-  .gearsim-page, .job-analysis-page { max-width: 1180px; margin: 0 auto; }
+  /* ---- 職業分析（gs-toolbar/gs-chip/gs-footnote 等樣式其他頁籤也共用） ---- */
+  .job-analysis-page { max-width: 1180px; margin: 0 auto; }
   .gs-toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
   .gs-toolbar select {
     padding: 7px 10px; border: 1px solid var(--border); border-radius: 6px;
@@ -642,45 +642,6 @@
   }
   .gs-chip:hover { border-color: var(--accent); }
   .gs-chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
-  .gs-layout { display: grid; grid-template-columns: 1.35fr 1fr; gap: 16px; align-items: start; }
-  @media (max-width: 860px) { .gs-layout { grid-template-columns: 1fr; } }
-  .gs-window { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
-  .gs-side { display: flex; flex-direction: column; gap: 16px; }
-  .gs-slot-grid { display: flex; flex-direction: column; gap: 7px; }
-  .gs-slot-row { display: grid; grid-template-columns: 104px repeat(4, 1fr); gap: 6px; }
-  .gs-slot-name { display: flex; flex-direction: column; justify-content: center; font-size: 0.78em; padding: 2px; }
-  .gs-slot-name .l { font-weight: 600; color: var(--text); }
-  .gs-slot-name .i { color: var(--muted); font-size: 0.9em; }
-  .gs-cell {
-    background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
-    min-height: 42px; padding: 4px 6px; cursor: pointer; position: relative;
-    display: flex; flex-direction: column; justify-content: center; gap: 1px;
-  }
-  .gs-cell.filled { background: var(--panel); }
-  .gs-cell:hover, .gs-cell.dragover { border-color: var(--accent); }
-  .gs-cell.active-picker { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-bg) inset; }
-  .gs-cell .cn { font-size: 0.78em; font-weight: 600; color: var(--text); line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .gs-cell .cp { font-size: 0.72em; color: var(--sheet); font-weight: 600; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-  .gs-cell .cx { color: var(--muted); font-size: 1.1em; text-align: center; }
-  .gs-cell .rm { position: absolute; top: 1px; right: 3px; font-size: 0.7em; color: var(--muted); opacity: 0; }
-  .gs-cell.filled:hover .rm { opacity: 1; }
-  .gs-cell .rm:hover { color: #b1452f; }
-  .gs-picker { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 10px; max-height: 420px; }
-  .gs-picker h3 { margin: 0; font-size: 0.98em; }
-  .gs-picker-hint { font-size: 0.8em; color: var(--muted); margin: -4px 0 0; }
-  .gs-picker input[type=text] { width: 100%; }
-  .gs-picker-list { overflow-y: auto; display: flex; flex-direction: column; gap: 3px; padding-right: 2px; }
-  .gs-picker-row {
-    display: flex; flex-direction: column; gap: 2px;
-    padding: 6px 9px; border-radius: 6px; border: 1px solid transparent; cursor: grab; font-size: 0.83em;
-  }
-  .gs-picker-row:hover { background: var(--accent-bg); border-color: var(--border); }
-  .gs-picker-row .prow-top { display: flex; justify-content: space-between; gap: 8px; }
-  .gs-picker-row .pn { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .gs-picker-row .pp { font-family: var(--mono); font-weight: 600; color: var(--sheet); flex-shrink: 0; }
-  .gs-picker-row .plabel { color: var(--muted); font-size: 0.92em; line-height: 1.4; }
-  .gs-picker-row.used { opacity: 0.4; }
-  .gs-picker-empty { color: var(--muted); font-size: 0.85em; padding: 20px 4px; text-align: center; }
   .gs-footnote { font-size: 0.78em; color: var(--muted); margin-top: 12px; line-height: 1.6; }
   .hover-tip {
     position: fixed; z-index: 200; display: none; pointer-events: none;
@@ -695,13 +656,6 @@
   .stat-table th { color: var(--accent); font-weight: 600; font-size: 0.92em; }
   .stat-table .stat-pct { font-family: var(--mono); font-weight: 700; color: var(--sheet); white-space: nowrap; }
   .stat-group-row td { background: var(--bg); font-weight: 700; font-size: 0.78em; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); padding: 5px 8px; border-bottom: 1px solid var(--border); }
-  .gs-summary { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
-  .gs-summary h3 { margin: 0 0 8px; font-size: 0.98em; }
-  .gs-summary-list { display: flex; flex-direction: column; gap: 6px; max-height: 260px; overflow-y: auto; }
-  .gs-summary-row { display: flex; justify-content: space-between; gap: 10px; font-size: 0.83em; padding: 5px 0; border-top: 1px solid var(--border); }
-  .gs-summary-row:first-child { border-top: none; }
-  .gs-summary-row .slabel { color: var(--text); line-height: 1.4; }
-  .gs-summary-row .sfrom { color: var(--muted); font-size: 0.85em; }
   .gs-summary-empty { color: var(--muted); font-size: 0.85em; }
 
   .ja-chain { font-size: 0.78em; color: var(--muted); margin-bottom: 2px; }
@@ -756,7 +710,6 @@
     <button class="tab-btn" data-tab="collection">收藏</button>
     <button class="tab-btn" data-tab="formula">公式</button>
     <button class="tab-btn" data-tab="jobAdjust">職業調整</button>
-    <button class="tab-btn" data-tab="gearsim">裝備模擬</button>
     <button class="tab-btn" data-tab="jobAnalysis">職業分析</button>
     <button class="tab-btn" data-tab="commands">指令</button>
   </div>
@@ -776,7 +729,6 @@
   <div class="pager" id="pager"></div>
   <div class="patch-notes-page" id="patchNotesPage" style="display:none"></div>
   <div class="formula-page" id="formulaPage" style="display:none"></div>
-  <div class="gearsim-page" id="gearsimPage" style="display:none"></div>
   <div class="job-analysis-page" id="jobAnalysisPage" style="display:none"></div>
   <div class="commands-page" id="commandsPage" style="display:none"></div>
   <div class="beginner-guide-page" id="beginnerGuidePage" style="display:none"></div>
@@ -1079,232 +1031,16 @@
     '</div>',
   ].join('');
 
-  // ================= 裝備模擬 / 職業分析 =================
+  // ================= 職業分析 =================
   // 資料來源：database/scripts/build_gear_sim.py 的輸出（web_sim_data.js），是一次性
   // 假想配裝模擬（失落系列武器+伊爾套裝全職業通用套），不是遊戲內實際傷害數字，
-  // 說明見兩個頁面的footnote。
+  // 說明見頁面的footnote。（2026/9/30 使用者要求拿掉「裝備模擬」頁籤，只留職業分析）
   var GS = window.WEB_SIM_DATA || { jobs: [], ranking: [], essential: [], cards: [], cardMatrix: {}, slotEquipKeywords: {} };
-  var GS_CARD_BY_ID = {};
-  (GS.cards || []).forEach(function (c) { GS_CARD_BY_ID[c.id] = c; });
-  var GS_SLOT_CAPACITY = { '武器': 4, '副手武器': 4, '鎧甲': 4, '鞋子': 4, '披肩': 4, '盾牌': 1, '裝飾品': 4, '頭上': 4, '頭中': 4, '頭下': 4 };
   var GS_ELEMENT_COLOR = { '水': '#2f6fa8', '地': '#8a5a2e', '火': '#b8452a', '風': '#2f9a86', '毒': '#5c8a2e', '聖': '#ad9330', '暗': '#6a4f9c', '念': '#a34c86', '不死': '#6f6478' };
   // 怪物頁籤的TAG固定順序（照官方10大種族/9種屬性/3種體型的慣例排，不是照字母/出現次序）
   var ELEMENT_ORDER = ['無', '水', '地', '火', '風', '毒', '聖', '暗', '念', '不死'];
   var RACE_ORDER = ['無形', '人形', '惡魔', '植物', '動物', '昆蟲', '不死', '天使', '魚貝', '龍族'];
   var SIZE_ORDER = ['小', '中', '大'];
-
-  function gsCardFitsSlot(card, slotLabel) {
-    var kws = GS.slotEquipKeywords[slotLabel];
-    if (!kws) return true;
-    var equip = card.equip || '';
-    return kws.some(function (k) { return equip.indexOf(k) !== -1; });
-  }
-  function gsContextOf(scenario) {
-    if (scenario.element) return 'magic:' + scenario.element;
-    if (!scenario.phys) return 'magic';
-    // 近戰/遠戰現在是各自獨立的情境（跟公式頁籤說的一樣，「近距離物理傷害」「遠距離
-    // 物理傷害」是兩個不同乘區），不是共用同一個'phys'——不然近戰遠戰選出來的卡會一樣。
-    // 原本靠label文字是不是'遠戰'來判斷，但label現在可能是具體技能名稱（石碑技能選單
-    // 用的情境），改成看後端另外算好放進來的rangeType欄位，不再從label反推。
-    return scenario.rangeType === '遠戰' ? 'ranged' : 'melee';
-  }
-  function gsEntryFor(cardId, context) {
-    var row = GS.cardMatrix[cardId];
-    var e = row && row[context];
-    return e || { pct: 0, label: '' };
-  }
-  function gsPctFor(cardId, context) { return gsEntryFor(cardId, context).pct; }
-
-  var GEARSIM_HTML = [
-    '<div class="gs-toolbar">',
-    '<select id="gsJobSelect"></select>',
-    '<div class="gs-chip-row" id="gsScenarioChips"></div>',
-    '</div>',
-    '<div class="gs-layout">',
-    '<div class="gs-window">',
-    '<div class="gs-slot-grid" id="gsSlotGrid"></div>',
-    '<div class="gs-footnote">點格子挑卡，或從右側清單把卡拖進格子；同一張卡ID全身只能用一次，插到新格子會自動從舊格子移出。頭上/中/下只算卡槽，不含底座裝備本身的數值。武器固定失落系列、身體防具固定伊爾全職業套。滑鼠移到卡片上可以看完整說明。</div>',
-    '</div>',
-    '<div class="gs-side">',
-    '<div class="gs-picker" id="gsPickerBody">',
-    '<h3>選一個格子開始配裝</h3>',
-    '<p class="gs-picker-hint">點左邊任何一個卡槽，這裡會列出所有插得進去的卡片，依目前情境的加成排序，滑鼠移過去看完整效果。</p>',
-    '</div>',
-    '<div class="gs-summary">',
-    '<h3>目前裝備加成明細</h3>',
-    '<div id="gsSummaryList" class="gs-summary-list"></div>',
-    '</div>',
-    '</div>',
-    '</div>',
-  ].join('');
-
-  var gsState = { jobIdx: 0, scenIdx: 0, gear: null, pickerSlot: null };
-
-  function gsCurrentJob() { return GS.jobs[gsState.jobIdx]; }
-  function gsCurrentScenario() {
-    // 使用者指出很多職業同時能玩物理跟法系——每個情境現在自己帶phys欄位，
-    // 不是整個職業共用同一個phys（同一個職業底下可能同時有近戰/遠戰跟屬性情境）。
-    return gsCurrentJob().scenarios[gsState.scenIdx];
-  }
-  function gsCloneGear(scenario) {
-    return scenario.gear.map(function (slot) {
-      var capacity = GS_SLOT_CAPACITY[slot.slot] || slot.cards.length || 1;
-      var cells = new Array(capacity).fill(null);
-      slot.cards.forEach(function (c, i) { if (i < capacity) cells[i] = c.id; });
-      return {
-        slot: slot.slot, item: slot.item, base: slot.base, cells: cells,
-        baseParts: slot.baseParts || [], itemDesc: slot.itemDesc || '',
-      };
-    });
-  }
-  function gsResetGear() { gsState.gear = gsCloneGear(gsCurrentScenario()); gsState.pickerSlot = null; }
-
-  function gsRenderJobSelect() {
-    var sel = document.getElementById('gsJobSelect');
-    sel.innerHTML = GS.jobs.map(function (j, i) { return '<option value="' + i + '">' + esc(j.chain.join(' > ')) + '</option>'; }).join('');
-    sel.value = gsState.jobIdx;
-    sel.onchange = function () { gsState.jobIdx = +sel.value; gsState.scenIdx = 0; gsResetGear(); gsRenderChips(); gsRenderAll(); };
-  }
-  function gsRenderChips() {
-    var wrap = document.getElementById('gsScenarioChips');
-    var j = gsCurrentJob();
-    wrap.innerHTML = j.scenarios.map(function (s, i) {
-      return '<button class="gs-chip' + (i === gsState.scenIdx ? ' active' : '') + '" data-i="' + i + '">' + esc(s.label) + '</button>';
-    }).join('');
-    Array.prototype.forEach.call(wrap.querySelectorAll('.gs-chip'), function (btn) {
-      btn.onclick = function () { gsState.scenIdx = +btn.dataset.i; gsResetGear(); gsRenderChips(); gsRenderAll(); };
-    });
-  }
-  function gsRenderSummary() {
-    // 使用者要求：裝備模擬只是用來看搭配卡片後的效果，不需要技能/輸出分數那些換算——
-    // 這裡改成一張「素質整合表」，同一句素質敘述來自不同卡就合併加總成一列，
-    // 來源卡片各自附上滑鼠移過去看完整效果的浮框。
-    var ctx = gsContextOf(gsCurrentScenario());
-    var entries = [];
-    gsState.gear.forEach(function (slot) {
-      if (slot.baseParts && slot.baseParts.length) {
-        slot.baseParts.forEach(function (p) {
-          entries.push({ name: slot.item, desc: slot.itemDesc, label: p.label, pct: p.pct, category: p.category });
-        });
-      }
-      slot.cells.forEach(function (cid) {
-        if (!cid) return;
-        var card = GS_CARD_BY_ID[cid];
-        var entry = gsEntryFor(cid, ctx);
-        if (!card || !entry.pct) return;
-        // 拆成每一句素質各自一筆，同一句從不同卡來的才能真的合併加總（不是把一張卡
-        // 好幾句效果黏成一句長字串再比對，那樣永遠對不到別張卡的單句效果）。
-        (entry.parts && entry.parts.length ? entry.parts : [{ label: entry.label, pct: entry.pct, category: '其他' }]).forEach(function (p) {
-          entries.push({ name: card.name, desc: card.desc, label: p.label, pct: p.pct, category: p.category });
-        });
-      });
-    });
-    var el = document.getElementById('gsSummaryList');
-    el.innerHTML = '<div class="stat-table-wrap">' + renderStatTable(entries) + '</div>';
-    bindHoverTipsIn(el);
-  }
-  function gsAllUsedIds() {
-    var used = {};
-    gsState.gear.forEach(function (slot) { slot.cells.forEach(function (cid) { if (cid) used[cid] = true; }); });
-    return used;
-  }
-  function gsRenderGrid() {
-    var wrap = document.getElementById('gsSlotGrid');
-    var ctx = gsContextOf(gsCurrentScenario());
-    wrap.innerHTML = '';
-    gsState.gear.forEach(function (slot, rowIdx) {
-      var row = document.createElement('div');
-      row.className = 'gs-slot-row';
-      var nameCol = document.createElement('div');
-      nameCol.className = 'gs-slot-name';
-      nameCol.innerHTML = '<div class="l">' + esc(slot.slot) + '</div>' + (slot.item ? '<div class="i">' + esc(slot.item) + '</div>' : '');
-      row.appendChild(nameCol);
-      var capacity = slot.cells.length;
-      for (var i = 0; i < 4; i++) {
-        if (i >= capacity) { row.appendChild(document.createElement('div')); continue; }
-        (function (rowIdx, i) {
-          var cid = slot.cells[i];
-          var cell = document.createElement('div');
-          cell.className = 'gs-cell' + (cid ? ' filled' : '');
-          if (gsState.pickerSlot && gsState.pickerSlot.rowIdx === rowIdx && gsState.pickerSlot.cellIdx === i) cell.classList.add('active-picker');
-          if (cid) {
-            var card = GS_CARD_BY_ID[cid];
-            var entry = gsEntryFor(cid, ctx);
-            cell.innerHTML = '<span class="rm" title="移除">✕</span><div class="cn">' + esc(card ? card.name : '?') + '</div>' +
-              '<div class="cp">' + esc(entry.label || ('+' + entry.pct.toFixed(0) + '%')) + '</div>';
-            if (card) bindHoverTip(cell, card.name, card.desc);
-            cell.querySelector('.rm').onclick = function (e) {
-              e.stopPropagation(); slot.cells[i] = null; gsRenderGrid(); gsRenderSummary();
-              if (gsState.pickerSlot && gsState.pickerSlot.rowIdx === rowIdx && gsState.pickerSlot.cellIdx === i) gsRenderPicker(rowIdx, i);
-            };
-          } else {
-            cell.innerHTML = '<div class="cx">+</div>';
-          }
-          cell.onclick = function () { gsOpenPicker(rowIdx, i); };
-          cell.ondragover = function (e) { e.preventDefault(); cell.classList.add('dragover'); };
-          cell.ondragleave = function () { cell.classList.remove('dragover'); };
-          cell.ondrop = function (e) {
-            e.preventDefault(); cell.classList.remove('dragover');
-            var draggedId = +e.dataTransfer.getData('text/card-id');
-            if (draggedId) gsAssignCard(rowIdx, i, draggedId);
-          };
-          row.appendChild(cell);
-        })(rowIdx, i);
-      }
-      wrap.appendChild(row);
-    });
-  }
-  function gsAssignCard(rowIdx, cellIdx, cardId) {
-    gsState.gear.forEach(function (slot) { slot.cells.forEach(function (cid, i) { if (cid === cardId) slot.cells[i] = null; }); });
-    gsState.gear[rowIdx].cells[cellIdx] = cardId;
-    gsRenderGrid(); gsRenderSummary(); gsOpenPicker(rowIdx, cellIdx);
-  }
-  function gsOpenPicker(rowIdx, cellIdx) {
-    gsState.pickerSlot = { rowIdx: rowIdx, cellIdx: cellIdx };
-    gsRenderGrid();
-    gsRenderPicker(rowIdx, cellIdx);
-  }
-  function gsRenderPicker(rowIdx, cellIdx) {
-    var slotLabel = gsState.gear[rowIdx].slot;
-    var ctx = gsContextOf(gsCurrentScenario());
-    var used = gsAllUsedIds();
-    var body = document.getElementById('gsPickerBody');
-    var fits = GS.cards.filter(function (c) { return gsCardFitsSlot(c, slotLabel); });
-    function doRender(query) {
-      var q = (query || '').trim();
-      var list = fits.filter(function (c) { return !q || c.name.indexOf(q) !== -1; });
-      list = list.map(function (c) { return { c: c, entry: gsEntryFor(c.id, ctx) }; })
-        .sort(function (a, b) { return b.entry.pct - a.entry.pct || a.c.name.localeCompare(b.c.name, 'zh'); });
-      var listEl = body.querySelector('.gs-picker-list');
-      if (!list.length) { listEl.innerHTML = '<div class="gs-picker-empty">沒有符合的卡片</div>'; return; }
-      listEl.innerHTML = list.map(function (o) {
-        var isUsed = used[o.c.id] && gsState.gear[rowIdx].cells[cellIdx] !== o.c.id;
-        return '<div class="gs-picker-row' + (isUsed ? ' used' : '') + '" draggable="true" data-id="' + o.c.id + '">' +
-          '<div class="prow-top"><span class="pn">' + esc(o.c.name) + '</span><span class="pp">' + (o.entry.pct ? '+' + o.entry.pct.toFixed(0) + '%' : '') + '</span></div>' +
-          (o.entry.label ? '<div class="plabel">' + esc(o.entry.label) + '</div>' : '') + '</div>';
-      }).join('');
-      Array.prototype.forEach.call(listEl.querySelectorAll('.gs-picker-row'), function (row) {
-        var oc = GS_CARD_BY_ID[+row.dataset.id];
-        row.onclick = function () { gsAssignCard(rowIdx, cellIdx, +row.dataset.id); };
-        row.ondragstart = function (e) { e.dataTransfer.setData('text/card-id', row.dataset.id); };
-        if (oc) bindHoverTip(row, oc.name, oc.desc);
-      });
-    }
-    body.innerHTML = '<h3>' + esc(slotLabel) + ' · 選卡</h3>' +
-      '<p class="gs-picker-hint">依目前情境（' + esc(gsCurrentScenario().label) + '）的加成排序，點選或拖進格子。</p>' +
-      '<input type="text" class="gs-picker-search" placeholder="搜尋卡片名稱...">' +
-      '<div class="gs-picker-list"></div>';
-    body.querySelector('.gs-picker-search').oninput = function (e) { doRender(e.target.value); };
-    doRender('');
-  }
-  function gsRenderAll() { gsRenderGrid(); gsRenderSummary(); }
-
-  function initGearSim() {
-    gsRenderJobSelect();
-    gsResetGear();
-    gsRenderChips();
-    gsRenderAll();
-  }
 
   // ---------------- 職業分析：跟「裝備模擬」是兩回事——這裡是TAG分近戰/遠戰/法系
   // 各屬性的配卡「指南」（列出實際該插哪些卡），不是可以手動調整的模擬器。 ----------------
@@ -2328,7 +2064,7 @@
   // 手動列出「隱藏其餘N個獨立頁面」，每新增一個獨立頁籤就要回頭改所有舊分支、很容易漏改
   // （這正是bug發生的原因）——改成集中維護一份清單，新增獨立頁籤只要加進這個陣列，
   // 不用去改其他分支的程式碼。
-  var CUSTOM_PAGE_IDS = ['patchNotesPage', 'formulaPage', 'gearsimPage', 'jobAnalysisPage', 'commandsPage', 'beginnerGuidePage', 'mapMonstersPage'];
+  var CUSTOM_PAGE_IDS = ['patchNotesPage', 'formulaPage', 'jobAnalysisPage', 'commandsPage', 'beginnerGuidePage', 'mapMonstersPage'];
 
   // ---------- 地圖頁：每張地圖有哪些怪（map_monsters.json）。可依「全部種類數」或某屬性種類數排序 ----------
   // 屬性標籤只列「實際有地圖資料的屬性」（例如念屬性怪目前都沒有出沒資料，就不會出現念標籤）
@@ -2459,15 +2195,6 @@
         });
       }
       renderCollectionStats();
-      return;
-    }
-    if (state.tab === 'gearsim') {
-      var gp = showCustomPage('gearsimPage');
-      if (!gp.dataset.rendered) {
-        gp.innerHTML = GEARSIM_HTML;
-        gp.dataset.rendered = '1';
-        initGearSim();
-      }
       return;
     }
     if (state.tab === 'jobAnalysis') {
@@ -2665,7 +2392,7 @@
     });
     document.getElementById('exportBtn').style.display = tab === 'collection' ? '' : 'none';
     document.getElementById('importBtn').style.display = tab === 'collection' ? '' : 'none';
-    var isFormula = tab === 'formula' || tab === 'gearsim' || tab === 'jobAnalysis' || tab === 'patchNotes' || tab === 'commands' || tab === 'beginnerGuide' || tab === 'mapMonsters';
+    var isFormula = tab === 'formula' || tab === 'jobAnalysis' || tab === 'patchNotes' || tab === 'commands' || tab === 'beginnerGuide' || tab === 'mapMonsters';
     document.querySelector('.controls').style.display = isFormula ? 'none' : '';
     document.getElementById('advanced').style.display = isFormula ? 'none' : '';
     if (!isFormula) buildAdvancedPanel();
