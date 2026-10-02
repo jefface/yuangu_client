@@ -1482,10 +1482,12 @@
           },
           {
             key: 'series', label: '系列', multi: true,
-            options: ['遠古版', '一般版'],
+            // 地獄王卡：9/30新增的●地獄王卡系列，c.hell由build_web_data.py依ID範圍標記
+            options: ['遠古版', '地獄王卡', '一般版'],
             test: function (c, selected) {
               return selected.some(function (opt) {
                 if (opt === '遠古版') return c.ancient;
+                if (opt === '地獄王卡') return c.hell;
                 if (opt === '一般版') return !c.ancient;
                 return false;
               });
